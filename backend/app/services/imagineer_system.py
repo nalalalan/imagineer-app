@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -164,6 +165,7 @@ class ImagineerSystem:
             configured = os.getenv("IMAGINEER_STATE_PATH", "").strip()
             state_path = configured or Path.cwd() / ".runtime" / "imagineer_state.json"
         self.state_path = Path(state_path)
+        self._state_lock = threading.RLock()
 
     def ops_check(self) -> dict[str, Any]:
         state = self._load_state()
@@ -287,81 +289,90 @@ class ImagineerSystem:
         }
 
     def run_weekly_paper_update(self) -> dict[str, Any]:
-        state = self._load_state()
-        current_week = self._week_id()
-        paper = self._build_weekly_paper(state, persisted=True)
-        state["weekly_papers"] = [
-            item for item in state.get("weekly_papers", []) if item.get("week_id") != current_week
-        ]
-        state["weekly_papers"].insert(0, paper)
-        state["weekly_papers"] = state["weekly_papers"][:26]
-        state["journal"].insert(
-            0,
-            {
-                "id": str(uuid.uuid4()),
-                "created_at": paper["updated_at"],
-                "title": "Weekly progress paper updated",
-                "body": paper["headline_result"],
-                "tags": ["weekly_paper", "paper_system", "application_packet"],
-            },
-        )
-        state["journal"] = state["journal"][:120]
-        self._save_state(state)
-        return {"ok": True, "paper": paper, "ops": self.ops_check()}
+        with self._state_lock:
+            state = self._load_state()
+            current_week = self._week_id()
+            paper = self._build_weekly_paper(state, persisted=True)
+            state["weekly_papers"] = [
+                item for item in state.get("weekly_papers", []) if item.get("week_id") != current_week
+            ]
+            state["weekly_papers"].insert(0, paper)
+            state["weekly_papers"] = state["weekly_papers"][:26]
+            state["journal"].insert(
+                0,
+                {
+                    "id": str(uuid.uuid4()),
+                    "created_at": paper["updated_at"],
+                    "title": "Weekly progress paper updated",
+                    "body": paper["headline_result"],
+                    "tags": ["weekly_paper", "paper_system", "application_packet"],
+                },
+            )
+            state["journal"] = state["journal"][:120]
+            self._save_state(state)
+            return {"ok": True, "paper": paper, "ops": self.ops_check()}
 
     def record_event(self, payload: dict[str, Any]) -> dict[str, Any]:
-        state = self._load_state()
-        event = self._event_from_payload(payload)
-        state["events"].insert(0, event)
-        state["events"] = state["events"][:300]
-        self._append_journal_from_event(state, event)
-        self._save_state(state)
-        return {"ok": True, "event": event, "ops": self.ops_check()}
+        with self._state_lock:
+            state = self._load_state()
+            event = self._event_from_payload(payload)
+            state["events"].insert(0, event)
+            state["events"] = state["events"][:300]
+            self._append_journal_from_event(state, event)
+            self._save_state(state)
+            return {"ok": True, "event": event, "ops": self.ops_check()}
 
     def run_daily_cycle(self) -> dict[str, Any]:
-        state = self._load_state()
-        today = _today()
-        existing = next(
-            (
-                event
-                for event in state["events"]
-                if event.get("kind") == "daily_cycle" and event.get("date") == today
-            ),
-            None,
-        )
-        dimensions = self._score_dimensions(state)
-        weakest = min(dimensions, key=lambda item: item["score"])
-        action = self._next_action(state, weakest, allow_openai=True)
+        with self._state_lock:
+            state = self._load_state()
+            today = _today()
+            existing = next(
+                (
+                    event
+                    for event in state["events"]
+                    if event.get("kind") == "daily_cycle" and event.get("date") == today
+                ),
+                None,
+            )
+            dimensions = self._score_dimensions(state)
+            weakest = min(dimensions, key=lambda item: item["score"])
+            action = self._next_action(state, weakest, allow_openai=True)
 
-        if existing:
-            return {"ok": True, "already_ran": True, "event": existing, "next_action": action, "ops": self.ops_check()}
+            if existing:
+                return {
+                    "ok": True,
+                    "already_ran": True,
+                    "event": existing,
+                    "next_action": action,
+                    "ops": self.ops_check(),
+                }
 
-        event = {
-            "id": str(uuid.uuid4()),
-            "created_at": _utc_now(),
-            "date": today,
-            "kind": "daily_cycle",
-            "title": action["title"],
-            "notes": action["body"],
-            "link": "",
-            "tags": [action["lane"], weakest["key"], "daily_cycle"],
-            "impact": 1,
-        }
-        state["events"].insert(0, event)
-        state["events"] = state["events"][:300]
-        state["journal"].insert(
-            0,
-            {
+            event = {
                 "id": str(uuid.uuid4()),
-                "created_at": event["created_at"],
-                "title": "Daily cycle selected",
-                "body": f"{action['title']} {action['body']}",
-                "tags": event["tags"],
-            },
-        )
-        state["journal"] = state["journal"][:120]
-        self._save_state(state)
-        return {"ok": True, "already_ran": False, "event": event, "next_action": action, "ops": self.ops_check()}
+                "created_at": _utc_now(),
+                "date": today,
+                "kind": "daily_cycle",
+                "title": action["title"],
+                "notes": action["body"],
+                "link": "",
+                "tags": [action["lane"], weakest["key"], "daily_cycle"],
+                "impact": 1,
+            }
+            state["events"].insert(0, event)
+            state["events"] = state["events"][:300]
+            state["journal"].insert(
+                0,
+                {
+                    "id": str(uuid.uuid4()),
+                    "created_at": event["created_at"],
+                    "title": "Daily cycle selected",
+                    "body": f"{action['title']} {action['body']}",
+                    "tags": event["tags"],
+                },
+            )
+            state["journal"] = state["journal"][:120]
+            self._save_state(state)
+            return {"ok": True, "already_ran": False, "event": event, "next_action": action, "ops": self.ops_check()}
 
     def _build_weekly_paper(self, state: dict[str, Any], persisted: bool) -> dict[str, Any]:
         ops = self.ops_check_without_weekly(state)
