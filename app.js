@@ -1,7 +1,7 @@
 const railwayApiBase = "https://imagineer-app-production.up.railway.app";
 const sameOriginApiHosts = new Set(["localhost", "127.0.0.1", "imagineer-app-production.up.railway.app"]);
 const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.location.hostname) ? "" : railwayApiBase);
-const paperName = "A proof-governed autonomy system for career conversion in embodied creative research and development";
+const paperName = "An autonomous career system for embodied creative research and development";
 
 const fallbackOps = {
   status: "static_fallback",
@@ -11,19 +11,19 @@ const fallbackOps = {
     company: "Walt Disney Imagineering R&D",
     location: "Glendale, California"
   },
-  positioning: "Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools for human-facing physical experiences.",
+  positioning: "Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools for physical interaction systems.",
   fit_score: 58,
   confidence: "fallback",
   current_bottleneck: {
     label: "Review intelligence",
     score: 34,
-    target_signal: "Repeatable critique, role calibration, source coverage, and optional approved human escalation.",
+    target_signal: "Repeatable critique, role calibration, public-source depth, and optional approved human escalation.",
     next_signal: "Run autonomous critique first; use human review only as an approved escalation.",
     score_basis: "Fallback score because the live backend did not load."
   },
   next_action: {
-    title: "Run the autonomous AI reviewer.",
-    body: "Pull current role, packet, portfolio, and Disney Research context into one critique loop."
+    title: "Run the autonomous AI review.",
+    body: "Pull current role, profile, portfolio, and Disney Research context into one critique loop."
   },
   reviewer: {
     mode: "autonomous_ai",
@@ -51,7 +51,7 @@ const fallbackOps = {
       label: "Review intelligence",
       score: 34,
       target_signal: "Whether the system can critique the public portfolio against WDI-style mechanical R&D expectations.",
-      next_signal: "Generate a live AI reviewer report from current sources.",
+      next_signal: "Generate a live AI review from current sources.",
       score_basis: "Static fallback; the live reviewer state was unavailable."
     }
   ],
@@ -62,7 +62,7 @@ const $ = (selector) => document.querySelector(selector);
 
 function setText(selector, value) {
   const node = $(selector);
-  if (node) node.textContent = value ?? "--";
+  if (node) node.textContent = clean(value);
 }
 
 async function request(path, options = {}) {
@@ -99,14 +99,14 @@ async function runReview() {
   button.textContent = "Running";
   setText("#reviewer-status", "running");
   setText("#reviewer-detail", "collecting public sources and generating critique");
-  setText("#report-generated", "Running the reviewer. This can take about a minute.");
+  setText("#report-generated", "Running the review. This can take about a minute.");
   try {
     const result = await request("/api/imagineer/ai-review/run", { method: "POST", timeout: 210000 });
     render(result.ops || fallbackOps, true);
   } catch {
     setText("#reviewer-status", "not completed");
-    setText("#reviewer-detail", "the reviewer run timed out or returned an error");
-    setText("#report-generated", "The last reviewer run did not complete in the browser.");
+    setText("#reviewer-detail", "the review timed out or returned an error");
+    setText("#report-generated", "The last review did not complete in the browser.");
   } finally {
     button.disabled = false;
     button.textContent = "Run review";
@@ -151,10 +151,10 @@ function render(ops, connected) {
 function renderReviewerReport(latestReview, action, generatedAt) {
   if (!latestReview || !latestReview.id) {
     setText("#report-score", "--");
-    setText("#report-generated", "No AI reviewer report has been generated yet.");
-    setText("#report-verdict", "Run the reviewer to generate the first report.");
-    setText("#report-summary", "The report will read the public AO Labs evidence graph, compare it against WDI R&D mechanical Imagineering signals, and return the most useful critique.");
-    setText("#report-top-issue", "Waiting for reviewer output.");
+    setText("#report-generated", "No AI review has been generated yet.");
+    setText("#report-verdict", "Run the review to generate the first report.");
+    setText("#report-summary", "The report will read the public AO Labs record, compare it against WDI R&D mechanical Imagineering signals, and return the most useful critique.");
+    setText("#report-top-issue", "Waiting for review output.");
     setText("#report-action-title", action.title || "--");
     setText("#report-action-body", action.body || "--");
     setText("#report-action-signal", action.expected_signal || action.why || "--");
@@ -167,7 +167,7 @@ function renderReviewerReport(latestReview, action, generatedAt) {
 
   setText("#report-score", Number.isFinite(latestReview.score) ? latestReview.score : "--");
   setText("#report-generated", `generated ${formatDateTime(generatedAt)} by ${latestReview.model || "AI reviewer"}`);
-  setText("#report-verdict", latestReview.verdict || "Reviewer generated a report.");
+  setText("#report-verdict", latestReview.verdict || "Review generated a report.");
   setText("#report-summary", reviewerSummary(latestReview, action));
   setText("#report-top-issue", latestReview.top_issue || "No top issue returned.");
   setText("#report-action-title", action.title || "No action returned");
@@ -190,9 +190,9 @@ function renderDimensions(dimensions) {
             <span>${score}</span>
           </div>
           <div class="bar" aria-hidden="true"><i style="--score:${score}%"></i></div>
-          <p><b>Measures</b> ${escapeHtml(dimension.target_signal || "No measurement target supplied.")}</p>
-          <p><b>Score basis</b> ${escapeHtml(dimension.score_basis || "Score basis will appear after the backend update deploys.")}</p>
-          <p><b>Next evidence</b> ${escapeHtml(dimension.next_signal || "No next evidence target supplied.")}</p>
+          <p><b>Tracks</b> ${escapeHtml(clean(dimension.target_signal || "No measurement target supplied."))}</p>
+          <p><b>Basis</b> ${escapeHtml(clean(dimension.score_basis || "Score basis will appear after the backend update deploys."))}</p>
+          <p><b>Unresolved</b> ${escapeHtml(clean(dimension.next_signal || "No unresolved signal supplied."))}</p>
         </article>
       `;
     }).join("")
@@ -204,16 +204,16 @@ function setList(selector, items) {
   if (!node) return;
   const cleanItems = Array.isArray(items) ? items.filter(Boolean) : [];
   node.innerHTML = cleanItems.length
-    ? cleanItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
+    ? cleanItems.map((item) => `<li>${escapeHtml(clean(item))}</li>`).join("")
     : `<li>Not returned in the latest review.</li>`;
 }
 
 function reviewerSummary(latestReview, action) {
-  const raw = latestReview.reviewer_summary || latestReview.why_it_matters || "The reviewer generated a critique from the public source graph.";
+  const raw = latestReview.reviewer_summary || latestReview.why_it_matters || "The review generated a critique from the public source graph.";
   const cleaned = removeDanglingNextMove(raw);
   if (cleaned) return cleaned;
   if (action && action.title && action.body) return `${action.title} ${action.body}`;
-  return "The reviewer generated a critique from the public source graph.";
+  return "The review generated a critique from the public source graph.";
 }
 
 function removeDanglingNextMove(value) {
@@ -227,7 +227,43 @@ function removeDanglingNextMove(value) {
 }
 
 function clean(value) {
-  return String(value || "--").replaceAll("_", " ");
+  let text = String(value || "--").replaceAll("_", " ");
+  const replacements = [
+    ["Sarrus mechanism proof", "Sarrus mechanism"],
+    ["mechanism proof", "mechanism record"],
+    ["proof packet", "profile"],
+    ["Proof packet", "Profile"],
+    ["evidence packet", "profile"],
+    ["Evidence packet", "Profile"],
+    ["reviewer-facing", "public"],
+    ["Reviewer-facing", "Public"],
+    ["reviewer-visible", "public"],
+    ["Reviewer-visible", "Public"],
+    ["reviewer-proof", "source-backed"],
+    ["Reviewer-proof", "Source-backed"],
+    ["best evidence", "strongest signals"],
+    ["Best evidence", "Strongest signals"],
+    ["evidence gaps", "unresolved signals"],
+    ["Evidence gaps", "Unresolved signals"],
+    ["evidence to create", "unresolved"],
+    ["Evidence to create", "Unresolved"],
+    ["next evidence", "unresolved signal"],
+    ["Next evidence", "Unresolved signal"],
+    ["best next move", "current constraint"],
+    ["Best next move", "Current constraint"],
+    ["show-value", "motion"],
+    ["Show-value", "Motion"],
+    ["source coverage", "source depth"],
+    ["Source coverage", "Source depth"],
+    ["what a reviewer can inspect", "public sources"],
+    ["What a reviewer can inspect", "Public sources"],
+    ["packet", "profile"],
+    ["Packet", "Profile"]
+  ];
+  for (const [from, to] of replacements) {
+    text = text.replaceAll(from, to);
+  }
+  return text;
 }
 
 function formatDateTime(value) {

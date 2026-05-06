@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 
 POSITIONING_LINE = (
     "Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools "
-    "for human-facing physical experiences."
+    "for physical interaction systems."
 )
 
 
@@ -44,8 +44,8 @@ DEFAULT_STATE: dict[str, Any] = {
     "guardrails": [
         "No fabricated credentials, projects, relationships, recommendations, or outcomes.",
         "No spam or fake outreach. Human approval is required before applications, direct referrals, sensitive messages, or external requests.",
-        "Optimize for truthful evidence: working prototypes, clear figures, test logs, concise writing, and real conversations.",
-        "Respect Disney and third-party intellectual property; focus on Alan-owned public work and general role-fit evidence.",
+        "Optimize for truthful public work: working prototypes, clear figures, test logs, concise writing, and real conversations.",
+        "Respect Disney and third-party intellectual property; focus on Alan-owned public work and general role-fit signals.",
     ],
     "reviewer": {
         "mode": "autonomous_ai",
@@ -55,7 +55,7 @@ DEFAULT_STATE: dict[str, Any] = {
         "source_urls": [
             "https://aolabs.io/",
             "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
-            "https://imagineer.aolabs.io/proof-packet.html",
+            "https://imagineer.aolabs.io/profile.html",
             "https://imagineer.aolabs.io/imagineer-autonomous-position-system.pdf",
             "https://cv.aolabs.io",
             "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf",
@@ -90,11 +90,11 @@ DEFAULT_STATE: dict[str, Any] = {
         "builder_pattern": [
             "AO Labs turns projects into public surfaces, papers, dashboards, media walls, and autonomous loops.",
             "Relay shows the user's preference for operational systems with metrics, state, experiments, logs, and money/result tracking.",
-            "Imagineer should use the same operational style for career conversion: evidence intake, source review, critique, action selection, and logged progress.",
+            "Imagineer should use the same operational style for career conversion: source intake, critique, state updates, and logged progress.",
         ],
         "wdi_relevance": [
             "Strongest fit is embodied creative R&D: mechanisms that produce readable physical motion, shape change, responsiveness, surprise, or believable object behavior.",
-            "The gap is not motivation; the gap is reviewer-proof evidence that makes mechanical credibility and show value obvious from public artifacts.",
+            "The gap is not motivation; the gap is source-backed public work that makes mechanical credibility and physical interaction obvious.",
         ],
     },
     "portfolio": [
@@ -138,19 +138,19 @@ DEFAULT_STATE: dict[str, Any] = {
         },
         {
             "key": "physical_experience",
-            "label": "Human-facing physical experience",
+            "label": "Human-facing motion",
             "score": 68,
-            "target_signal": "Guest-facing language: believability, surprise, touch, motion, repeatability, safety, and show value.",
+            "target_signal": "Guest-facing motion: believability, surprise, touch, repeatability, safety, and readable behavior.",
         },
         {
             "key": "leadership_network",
             "label": "Principal-level network",
             "score": 34,
-            "target_signal": "Real conversations, referrals, project collaborators, and evidence of technical leadership.",
+            "target_signal": "Real conversations, referrals, project collaborators, and visible technical leadership.",
         },
         {
             "key": "application_packet",
-            "label": "Glendale packet",
+            "label": "Glendale profile",
             "score": 46,
             "target_signal": "Role-specific portfolio page, two-minute demo reel, CV bullets, and tailored project narrative.",
         },
@@ -167,23 +167,23 @@ DEFAULT_STATE: dict[str, Any] = {
             "name": "Autonomous AI reviewer v0",
             "status": "active",
             "hypothesis": (
-                "If the system repeatedly critiques Alan-owned evidence against live WDI R&D signals, "
+                "If the system repeatedly critiques Alan-owned work against live WDI R&D signals, "
                 "the next useful artifact becomes obvious without waiting for a human reviewer."
             ),
-            "variable": "Source coverage and critique specificity.",
-            "success_metric": "One autonomous review run, a ranked gap list, and one concrete packet or portfolio improvement selected from the review.",
+            "variable": "Public-source depth and critique specificity.",
+            "success_metric": "One autonomous review run, a ranked unresolved-signal list, and one concrete profile or portfolio improvement selected from the review.",
             "started_at": "2026-05-06",
         },
         {
-            "id": "wdi-proof-packet-v0",
-            "name": "WDI proof packet v0",
+            "id": "wdi-profile-v0",
+            "name": "WDI R&D profile v0",
             "status": "supporting",
             "hypothesis": (
-                "If Alan converts existing soft-robotics work into a concise WDI R&D proof packet, "
+                "If Alan converts existing soft-robotics work into a concise WDI R&D profile, "
                 "the gap shifts from unclear fit to visible studio relevance."
             ),
-            "variable": "Translation quality from technical result to human-facing physical experience.",
-            "success_metric": "Five proof logs, one reviewer-ready portfolio artifact, and one AI critique cycle inside seven days.",
+            "variable": "Translation quality from technical result to physical interaction.",
+            "success_metric": "Five logged updates, one public portfolio profile, and one AI critique cycle inside seven days.",
             "started_at": "2026-05-06",
         },
         {
@@ -192,14 +192,14 @@ DEFAULT_STATE: dict[str, Any] = {
             "status": "queued",
             "hypothesis": "A principal-track map exposes which missing signals matter most: leadership, autonomy, vendor work, or shop-floor depth.",
             "variable": "Gap priority order.",
-            "success_metric": "A ranked 12-signal checklist with evidence links and a concrete owner/action for each signal.",
+            "success_metric": "A ranked 12-signal map with source links and clear system-owned status for each signal.",
             "started_at": None,
         },
         {
             "id": "nature-methods-v0",
             "name": "Adaptive career methods paper",
             "status": "queued",
-            "hypothesis": "The same machinery used for autonomous revenue can become a publishable career-conversion system if evidence and ethics are first-class.",
+            "hypothesis": "The same machinery used for autonomous revenue can become a publishable career-conversion system if sources and ethics are first-class.",
             "variable": "Outcome metric design.",
             "success_metric": "A methods outline with state schema, decision policy, intervention log, and evaluation metrics.",
             "started_at": None,
@@ -324,7 +324,7 @@ class ImagineerSystem:
         sections = [
             {
                 "title": "Abstract",
-                "claim": "An adaptive, guardrailed agent system can convert an ambiguous career target into daily evidence-building interventions.",
+                "claim": "An adaptive, guardrailed agent system can convert an ambiguous career target into daily source-backed interventions.",
             },
             {
                 "title": "System Architecture",
@@ -332,11 +332,11 @@ class ImagineerSystem:
             },
             {
                 "title": "Decision Policy",
-                "claim": "Actions are chosen by the weakest verified role-fit signal, with optional language-model planning constrained by evidence and ethics.",
+                "claim": "Actions are chosen by the weakest verified role-fit signal, with optional language-model planning constrained by sources and ethics.",
             },
             {
                 "title": "Evaluation",
-                "claim": "The system tracks proof velocity, reviewer-ready artifacts, review paths, application readiness, and conversion milestones.",
+                "claim": "The system tracks logged work, public artifacts, review runs, application readiness, and conversion milestones.",
             },
             {
                 "title": "Guardrails",
@@ -344,18 +344,18 @@ class ImagineerSystem:
             },
             {
                 "title": "Case Study",
-                "claim": "The first deployment targets WDI R&D mechanical roles using Alan-owned soft robotics, actuation, and creative prototyping evidence.",
+                "claim": "The first deployment targets WDI R&D mechanical roles using Alan-owned soft robotics, actuation, and creative prototyping work.",
             },
         ]
         if compact:
             return {
-                "working_title": "Adaptive Evidence Systems for Career Conversion in Embodied Creative R&D",
-                "thesis": "Career progress becomes optimizable when evidence, decisions, experiments, and ethics are logged as a closed-loop system.",
+                "working_title": "Adaptive Career Systems for Embodied Creative R&D",
+                "thesis": "Career progress becomes optimizable when sources, decisions, experiments, and ethics are logged as a closed-loop system.",
                 "section_count": len(sections),
             }
         return {
-            "working_title": "Adaptive Evidence Systems for Career Conversion in Embodied Creative R&D",
-            "thesis": "Career progress becomes optimizable when evidence, decisions, experiments, and ethics are logged as a closed-loop system.",
+            "working_title": "Adaptive Career Systems for Embodied Creative R&D",
+            "thesis": "Career progress becomes optimizable when sources, decisions, experiments, and ethics are logged as a closed-loop system.",
             "sections": sections,
         }
 
@@ -399,7 +399,7 @@ class ImagineerSystem:
                 "kind": "ai_review",
                 "title": "AI reviewer critique generated",
                 "notes": f"{review['verdict']} Top issue: {review['top_issue']}",
-                "link": "https://imagineer.aolabs.io/proof-packet.html",
+                "link": "https://imagineer.aolabs.io/profile.html",
                 "tags": ["ai_reviewer", "paper_system", "application_packet", "mechanical_depth"],
                 "impact": 2,
             }
@@ -516,14 +516,14 @@ class ImagineerSystem:
                 "heading": "Abstract",
                 "body": (
                     "This weekly paper reports the progress of an autonomous, guardrailed career-conversion system "
-                    "targeting WDI R&D mechanical Imagineering roles. The system converts Alan-owned evidence, "
+                    "targeting WDI R&D mechanical Imagineering roles. The system converts Alan-owned work, "
                     "daily actions, experiments, and guardrails into an adaptive decision loop."
                 ),
             },
             {
                 "heading": "Methods Update",
                 "body": (
-                    "The system scores six role-fit dimensions, selects the weakest verified signal, records proof events, "
+                    "The system scores six role-fit dimensions, selects the weakest verified signal, records logged work, "
                     "runs daily cycles, and maintains a research journal. OpenAI planning is used only when configured; "
                     "otherwise the local deterministic policy chooses the next ethical action."
                 ),
@@ -531,8 +531,8 @@ class ImagineerSystem:
             {
                 "heading": "Weekly Results",
                 "body": (
-                    f"This week has {len(recent_events)} logged events, {ops['evidence']['proof_events']} total proof logs, "
-                    f"{ops['evidence']['daily_cycles']} daily cycles, {ops['evidence']['reviewer_ready_artifacts']} reviewer-ready artifacts, "
+                    f"This week has {len(recent_events)} logged events, {ops['evidence']['proof_events']} total work logs, "
+                    f"{ops['evidence']['daily_cycles']} daily cycles, {ops['evidence']['reviewer_ready_artifacts']} public artifacts, "
                     f"and {ops['evidence']['portfolio_items']} portfolio anchors. "
                     f"{headline}."
                 ),
@@ -552,7 +552,7 @@ class ImagineerSystem:
                 "heading": "Ethics And Guardrails",
                 "body": (
                     "The system forbids fabricated credentials, fake outreach, spam, and unapproved applications. "
-                    "Progress must come from truthful evidence, real artifacts, useful relationships, and visible technical work."
+                    "Progress must come from truthful public work, real artifacts, useful relationships, and visible technical work."
                 ),
             },
         ]
@@ -637,13 +637,13 @@ class ImagineerSystem:
             "verdict": self._review_display_text(
                 review.get("verdict"),
                 review.get("reviewer_summary"),
-                "Credible WDI R&D direction; the public packet still needs denser mechanical proof.",
+                "Credible WDI R&D direction; the public profile still needs denser mechanical validation.",
             ),
             "top_issue": self._review_display_text(
                 review.get("top_issue"),
                 None,
                 (
-                    "The current public packet still needs one mechanism-centered Sarrus or FluxCell artifact with "
+                    "The current public profile still needs one mechanism-centered Sarrus or FluxCell artifact with "
                     "geometry, travel, load path, constraints, actuation margin, prototype build, test result, and iteration."
                 ),
             ),
@@ -782,8 +782,8 @@ class ImagineerSystem:
             return "Disney Careers role listing"
         if lowered.rstrip("/") == "https://aolabs.io":
             return "AO Labs home"
-        if "imagineer.aolabs.io/proof-packet" in lowered:
-            return "WDI proof packet"
+        if "imagineer.aolabs.io/profile" in lowered or "imagineer.aolabs.io/proof-packet" in lowered:
+            return "WDI R&D profile"
         if "imagineer.aolabs.io/imagineer-autonomous-position-system" in lowered:
             return "Imagineer paper PDF"
         if "sarrus.aolabs.io" in lowered:
@@ -835,7 +835,7 @@ class ImagineerSystem:
                 for source in sources
             ]
             prompt = {
-                "review_goal": "Autonomously critique Alan Pham's WDI R&D Imagineering proof packet and portfolio fit.",
+                "review_goal": "Autonomously critique Alan Pham's WDI R&D Imagineering profile and portfolio fit.",
                 "target": state["target"],
                 "positioning": state["positioning"],
                 "current_ops": ops,
@@ -848,6 +848,13 @@ class ImagineerSystem:
                 instructions=(
                     "You are an evidence-only autonomous reviewer for a WDI R&D mechanical Imagineering target. "
                     "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
+                    "Write Alan-facing strings like a peer-level research/operator readout, not a checklist, "
+                    "homework prompt, motivational page, or reviewer-prep worksheet. Avoid these terms and close "
+                    "variants in displayed strings: proof packet, evidence packet, reviewer-facing, reviewer-visible, "
+                    "reviewer-proof, best evidence, evidence gaps, evidence to create, next evidence, best next move, "
+                    "show-value, source coverage, and what a reviewer can inspect. Prefer neutral terms such as "
+                    "profile, public record, strongest signals, unresolved, current constraint, source depth, "
+                    "measurement table, and motion examples. "
                     "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
                     "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
                     "next_actions must be an array of objects with title, body, expected_signal, and source. "
@@ -882,7 +889,7 @@ class ImagineerSystem:
                 continue
             next_actions.append(
                 {
-                    "title": self._bounded_display_text(item.get("title") or "Improve one proof artifact.", 220),
+                    "title": self._bounded_display_text(item.get("title") or "Improve one public artifact.", 220),
                     "body": self._bounded_display_text(item.get("body") or "", 1200),
                     "expected_signal": self._bounded_display_text(item.get("expected_signal") or "", 700),
                     "source": self._bounded_display_text(item.get("source") or "", 500),
@@ -893,12 +900,12 @@ class ImagineerSystem:
 
         return {
             "verdict": self._bounded_display_text(
-                parsed.get("verdict") or "Review completed; packet needs sharper evidence.",
+                parsed.get("verdict") or "Review completed; profile needs sharper source backing.",
                 500,
             ),
             "score": max(0, min(int(parsed.get("score") or 0), 100)),
             "top_issue": self._bounded_display_text(
-                parsed.get("top_issue") or "The packet needs one concrete proof point.",
+                parsed.get("top_issue") or "The profile needs one concrete mechanical validation artifact.",
                 800,
             ),
             "why_it_matters": self._review_summary_text(parsed.get("why_it_matters"), "", max_chars=1600),
@@ -923,16 +930,16 @@ class ImagineerSystem:
         return {
             "verdict": "Credible core, not inevitable yet.",
             "score": max(0, min(int(ops.get("fit_score") or 0), 100)),
-            "top_issue": "The packet still needs one hard mechanical validation artifact that connects directly to a believable human-facing physical experience.",
+            "top_issue": "The profile still needs one hard mechanical validation artifact that connects directly to believable physical interaction.",
             "why_it_matters": (
                 "The WDI R&D role asks for hands-on mechanical design, prototype testing, loads, moments, forces, CAD, "
-                "iteration, and collaboration across creative and technical disciplines. The current packet is aligned, "
-                "but the reviewer-grade proof should make one mechanism impossible to dismiss."
+                "iteration, and collaboration across creative and technical disciplines. The current profile is aligned, "
+                "but the public record should make one mechanism impossible to dismiss."
             ),
             "best_existing_evidence": [
-                "Sarrus gives the core soft robotics mechanism and physical morphing surface proof.",
+                "Sarrus gives the core soft robotics mechanism and physical morphing surface record.",
                 "FluxCell gives a concrete actuation route for moving beyond tethered pneumatic demos.",
-                "The proof packet already targets WDI R&D language instead of a generic academic robotics framing.",
+                "The profile already targets WDI R&D language instead of a generic academic robotics framing.",
             ],
             "evidence_gaps": [
                 "One compact force/load/travel/stiffness calculation tied to the mechanism.",
@@ -942,21 +949,21 @@ class ImagineerSystem:
             ],
             "next_actions": [
                 {
-                    "title": "Add one reviewer-proof mechanical figure.",
-                    "body": "Create a single figure or packet block with Sarrus cell travel, load path, estimated force or stiffness, prototype material/process, and what changed after testing.",
-                    "expected_signal": "Mechanical reviewer can see loads, motion, fabrication, and iteration without asking for missing basics.",
+                    "title": "Add one mechanical validation figure.",
+                    "body": "Create a single figure or profile block with Sarrus cell travel, load path, estimated force or stiffness, prototype material/process, and what changed after testing.",
+                    "expected_signal": "The public record shows loads, motion, fabrication, and iteration without asking for missing basics.",
                     "source": source_names or "Live Imagineer state",
                 },
                 {
                     "title": "Add one guest-facing demo frame.",
                     "body": "Pair the mechanical figure with one storyboard frame: what the mechanism makes an object do, and why that motion would feel alive, responsive, or surprising.",
-                    "expected_signal": "The work reads as WDI physical experience R&D, not only soft robotics research.",
-                    "source": "Proof packet and portfolio sources",
+                    "expected_signal": "The work reads as WDI physical interaction R&D, not only soft robotics research.",
+                    "source": "Profile and portfolio sources",
                 },
             ],
             "packet_edits": [
                 "Replace the human review ask with an autonomous AI review contract.",
-                "Add a compact validation block: mechanism, measurement, failure, design change, next proof.",
+                "Add a compact validation block: mechanism, measurement, failure, design change, unresolved data.",
                 "Add one role-fit line that names CAD, loads/forces, prototype fabrication, and test iteration.",
             ],
             "reviewer_summary": (
@@ -1104,7 +1111,43 @@ class ImagineerSystem:
         return text
 
     def _clean_inline_text(self, text: str) -> str:
-        return " ".join(text.strip().split())
+        return self._alan_facing_text(" ".join(text.strip().split()))
+
+    def _alan_facing_text(self, text: str) -> str:
+        replacements = (
+            ("Sarrus mechanism proof", "Sarrus mechanism"),
+            ("sarrus mechanism proof", "Sarrus mechanism"),
+            ("mechanism proof", "mechanism record"),
+            ("proof packet", "profile"),
+            ("Proof packet", "Profile"),
+            ("evidence packet", "profile"),
+            ("Evidence packet", "Profile"),
+            ("reviewer-facing", "public"),
+            ("Reviewer-facing", "Public"),
+            ("reviewer-visible", "public"),
+            ("Reviewer-visible", "Public"),
+            ("reviewer-proof", "source-backed"),
+            ("Reviewer-proof", "Source-backed"),
+            ("best evidence", "strongest signals"),
+            ("Best evidence", "Strongest signals"),
+            ("evidence gaps", "unresolved signals"),
+            ("Evidence gaps", "Unresolved signals"),
+            ("evidence to create", "unresolved"),
+            ("Evidence to create", "Unresolved"),
+            ("next evidence", "unresolved signal"),
+            ("Next evidence", "Unresolved signal"),
+            ("best next move", "current constraint"),
+            ("Best next move", "Current constraint"),
+            ("show-value", "motion"),
+            ("Show-value", "Motion"),
+            ("source coverage", "source depth"),
+            ("Source coverage", "Source depth"),
+            ("what a reviewer can inspect", "public sources"),
+            ("What a reviewer can inspect", "Public sources"),
+        )
+        for old, new in replacements:
+            text = text.replace(old, new)
+        return text
 
     def _load_state(self) -> dict[str, Any]:
         if not self.state_path.exists():
@@ -1205,7 +1248,7 @@ class ImagineerSystem:
     def _append_journal_from_event(self, state: dict[str, Any], event: dict[str, Any]) -> None:
         if event["kind"] == "daily_cycle":
             return
-        body = event["notes"] or event["link"] or "Evidence logged."
+        body = event["notes"] or event["link"] or "Work logged."
         state["journal"].insert(
             0,
             {
@@ -1278,7 +1321,7 @@ class ImagineerSystem:
                 "portfolio_cap": 4,
                 "daily_cap": 1,
                 "ceiling": 86,
-                "ceiling_reason": "raw digitized curves, uncertainty, and reviewer-grade test conditions are still missing.",
+                "ceiling_reason": "raw digitized curves, uncertainty, and formal test conditions are still missing.",
             },
             "creative_prototyping": {
                 "event_weight": 0.25,
@@ -1287,7 +1330,7 @@ class ImagineerSystem:
                 "portfolio_cap": 4,
                 "daily_cap": 1,
                 "ceiling": 84,
-                "ceiling_reason": "the public proof still needs a tighter visible prototype-iteration story.",
+                "ceiling_reason": "the public record still needs a tighter visible prototype-iteration story.",
             },
             "physical_experience": {
                 "event_weight": 0.70,
@@ -1296,7 +1339,7 @@ class ImagineerSystem:
                 "portfolio_cap": 4,
                 "daily_cap": 1,
                 "ceiling": 82,
-                "ceiling_reason": "show value is visible, but the packet still needs a concise guest-facing demo sequence.",
+                "ceiling_reason": "motion is visible, but the profile still needs a concise guest-facing demo sequence.",
             },
             "leadership_network": {
                 "event_weight": 0.20,
@@ -1305,7 +1348,7 @@ class ImagineerSystem:
                 "portfolio_cap": 2,
                 "daily_cap": 1,
                 "ceiling": 58,
-                "ceiling_reason": "the reviewer loop works, but principal-level human review, source coverage, and leadership evidence remain weak.",
+                "ceiling_reason": "the review loop works, but principal-level human review, source depth, and leadership signals remain weak.",
             },
             "application_packet": {
                 "event_weight": 0.50,
@@ -1314,7 +1357,7 @@ class ImagineerSystem:
                 "portfolio_cap": 4,
                 "daily_cap": 1,
                 "ceiling": 76,
-                "ceiling_reason": "the packet is credible for the active rung, but a demo reel, final CV bullets, and principal-scope evidence are still open.",
+                "ceiling_reason": "the profile is credible for the active rung, but a demo reel, final CV bullets, and principal-scope signals are still open.",
             },
             "paper_system": {
                 "event_weight": 0.45,
@@ -1335,7 +1378,7 @@ class ImagineerSystem:
                 "portfolio_cap": 2,
                 "daily_cap": 1,
                 "ceiling": 75,
-                "ceiling_reason": "the lane has unresolved evidence gaps.",
+                "ceiling_reason": "the lane has unresolved signals.",
             },
         )
 
@@ -1386,7 +1429,7 @@ class ImagineerSystem:
             "mechanical_depth": {
                 "lane": key,
                 "title": "Make one mechanism calculation visible.",
-                "body": "Pick one Sarrus or FluxCell mechanism and publish a compact load, travel, stiffness, force, tolerance, or actuation note that a mechanical reviewer can trust.",
+                "body": "Pick one Sarrus or FluxCell mechanism and publish a compact load, travel, stiffness, force, tolerance, or actuation note that reads as mechanically rigorous.",
                 "why": "The active listing asks for mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering.",
             },
             "creative_prototyping": {
@@ -1399,17 +1442,17 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Translate the technical result into guest value.",
                 "body": "Write the one-minute explanation: what someone feels, sees, believes, or can do because this mechanism exists.",
-                "why": "The target is not just machinery; it is human-facing physical experience.",
+                "why": "The target is not just machinery; it is human-facing physical interaction.",
             },
             "leadership_network": {
                 "lane": key,
                 "title": "Run the autonomous AI reviewer.",
-                "body": "Pull current role, packet, portfolio, and Disney Research context into the AI reviewer, then route the top critique into one proof-packet or portfolio improvement.",
+                "body": "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the top critique into one profile or portfolio improvement.",
                 "why": "The principal north star needs rigorous external-style critique, but the first review loop can be autonomous and repeatable before any human outreach.",
             },
             "application_packet": {
                 "lane": key,
-                "title": "Sharpen the Glendale packet.",
+                "title": "Tighten the Glendale profile.",
                 "body": "Convert one project into a role-fit artifact: title, thumbnail, 90-second story, technical figure, your contribution, and the next build.",
                 "why": "The active role asks for a portfolio that demonstrates a foundation in mechanical design.",
             },
@@ -1472,8 +1515,8 @@ class ImagineerSystem:
             "mechanical_depth": "Digitize the Sarrus force, stiffness, and hysteresis curves with uncertainty and test conditions.",
             "creative_prototyping": "Make one prototype iteration visible as a before/after artifact.",
             "physical_experience": "Turn the Sarrus object-manipulation clip into a concise guest-facing motion sequence.",
-            "leadership_network": "Improve reviewer source coverage and prepare human-review evidence, but ask before any outreach.",
-            "application_packet": "Add the final active-rung packet pieces: demo reel, CV bullets, and role-specific narrative.",
+            "leadership_network": "Improve public-source depth and prepare any human-review material, but ask before any outreach.",
+            "application_packet": "Add the final active-rung profile pieces: demo reel, CV bullets, and role-specific narrative.",
             "paper_system": "Add scheduled runs, evaluation history, and outcome tracking so the loop proves persistence.",
         }
         return signals.get(key, "Advance one verified signal.")
@@ -1486,7 +1529,7 @@ class ImagineerSystem:
 
     def _dimension_target_signal(self, key: str, fallback: str) -> str:
         signals = {
-            "leadership_network": "Repeatable critique, role calibration, source coverage, and optional approved human escalation.",
+            "leadership_network": "Repeatable critique, role calibration, public-source depth, and optional approved human escalation.",
         }
         return signals.get(key, fallback)
 
@@ -1496,15 +1539,15 @@ class ImagineerSystem:
         if fit_score >= 65:
             return "credible_but_needs_signal"
         if fit_score >= 50:
-            return "promising_needs_packet"
+            return "promising_needs_profile"
         return "early_system_build"
 
     def _title_for_kind(self, kind: str) -> str:
         titles = {
-            "proof": "Proof logged",
+            "proof": "Work logged",
             "outreach": "Relationship signal logged",
             "portfolio": "Portfolio artifact logged",
             "paper": "Methods signal logged",
-            "application": "Application packet signal logged",
+            "application": "Application profile signal logged",
         }
         return titles.get(kind, "Imagineer signal logged")

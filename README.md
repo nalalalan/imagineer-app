@@ -5,8 +5,8 @@ Adaptive AO Labs system for moving Alan toward WDI R&D mechanical Imagineering r
 ## What It Does
 
 - Serves the public dashboard for `imagineer.aolabs.io`.
-- Serves a reviewer-ready proof packet at `proof-packet.html`.
-- Tracks target-role fit, evidence, experiments, journal entries, and guardrails.
+- Serves a source-backed WDI R&D profile at `profile.html`.
+- Tracks target-role fit, source review, experiments, journal entries, and guardrails.
 - Exposes monitoring endpoints:
   - `GET /health`
   - `GET /api/imagineer/ops-check`
