@@ -192,39 +192,6 @@ h2 {
   overflow-wrap: anywhere;
 }
 
-.next-strip {
-  max-width: 860px;
-  margin-top: 18px;
-  padding: 13px 15px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: var(--radius);
-  background: #fbfcf9;
-}
-
-.next-strip span {
-  display: block;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-}
-
-.next-strip strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 18px;
-  line-height: 1.2;
-  font-weight: 900;
-}
-
-.next-strip p {
-  margin-top: 5px;
-  color: var(--soft-ink);
-  font-size: 14px;
-}
-
 .score-stack {
   width: 210px;
   display: grid;
