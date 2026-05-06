@@ -634,12 +634,23 @@ class ImagineerSystem:
             "id": review.get("id"),
             "created_at": review.get("created_at"),
             "score": review.get("score"),
-            "verdict": review.get("verdict"),
-            "top_issue": review.get("top_issue"),
+            "verdict": self._review_display_text(
+                review.get("verdict"),
+                review.get("reviewer_summary"),
+                "Credible WDI R&D direction; the public packet still needs denser mechanical proof.",
+            ),
+            "top_issue": self._review_display_text(
+                review.get("top_issue"),
+                None,
+                (
+                    "The current public packet still needs one mechanism-centered Sarrus or FluxCell artifact with "
+                    "geometry, travel, load path, constraints, actuation margin, prototype build, test result, and iteration."
+                ),
+            ),
             "why_it_matters": review.get("why_it_matters"),
-            "best_existing_evidence": review.get("best_existing_evidence") or [],
-            "evidence_gaps": review.get("evidence_gaps") or [],
-            "packet_edits": review.get("packet_edits") or [],
+            "best_existing_evidence": self._string_list(review.get("best_existing_evidence"), 5, 260),
+            "evidence_gaps": self._string_list(review.get("evidence_gaps"), 6, 260),
+            "packet_edits": self._string_list(review.get("packet_edits"), 5, 260),
             "reviewer_summary": review.get("reviewer_summary"),
             "next_action": next_actions[0] if next_actions else None,
             "source_count": review.get("source_count"),
@@ -946,12 +957,58 @@ class ImagineerSystem:
             return []
         items: list[str] = []
         for item in value:
-            text = str(item).strip()
+            text = self._review_list_item_text(item)
             if text:
-                items.append(text[:max_chars])
+                items.append(text[:max_chars].rstrip())
             if len(items) >= limit:
                 break
         return items
+
+    def _review_list_item_text(self, item: Any) -> str:
+        if isinstance(item, dict):
+            source = str(item.get("source") or "").strip()
+            evidence = str(item.get("evidence") or "").strip()
+            gap = str(item.get("gap") or "").strip()
+            detail = str(item.get("detail") or "").strip()
+            section = str(item.get("section") or "").strip()
+            edit = str(item.get("edit") or "").strip()
+            title = str(item.get("title") or "").strip()
+            body = str(item.get("body") or "").strip()
+            if source and evidence:
+                return self._clean_inline_text(f"{source}: {evidence}")
+            if gap and detail:
+                return self._clean_inline_text(f"{gap}: {detail}")
+            if gap:
+                return self._clean_inline_text(gap)
+            if section and edit:
+                return self._clean_inline_text(f"{section}: {edit}")
+            if title and body:
+                return self._clean_inline_text(f"{title}: {body}")
+            if edit:
+                return self._clean_inline_text(edit)
+            if evidence:
+                return self._clean_inline_text(evidence)
+            return self._clean_inline_text(json.dumps(item, ensure_ascii=True, sort_keys=True))
+        return self._clean_inline_text(str(item or ""))
+
+    def _review_display_text(self, primary: Any, fallback: Any, default: str) -> str:
+        text = self._clean_inline_text(str(primary or ""))
+        if text and text[-1] in ".!?":
+            return text
+        fallback_text = self._clean_inline_text(str(fallback or ""))
+        if fallback_text:
+            return self._first_sentence(fallback_text)
+        return default
+
+    def _first_sentence(self, text: str) -> str:
+        for marker in (". ", "! ", "? "):
+            index = text.find(marker)
+            if index > 0:
+                return text[: index + 1]
+        return text
+
+    def _clean_inline_text(self, text: str) -> str:
+        return " ".join(text.strip().split())
 
     def _load_state(self) -> dict[str, Any]:
         if not self.state_path.exists():
