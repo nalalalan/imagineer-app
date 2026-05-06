@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Imagineer icon">
-  <rect width="128" height="128" rx="26" fill="#141419"/>
+  <rect width="128" height="128" rx="26" fill="#0c0d12"/>
   <style>
-    .m { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 900; fill: #f7f1ed; }
-    .a { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 900; fill: #e4aeb9; }
+    .w { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 950; fill: #f7f5ef; }
+    .r { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 950; fill: #d76d86; }
   </style>
-  <path d="M38 38v52" fill="none" stroke="#f7f1ed" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="38" cy="24" r="7" fill="#f7f1ed"/>
-  <path d="M58 25 58 103" stroke="#787f8e" stroke-width="4" stroke-linecap="round"/>
-  <path d="M76 44c13 0 24 9 24 20S89 84 76 84" fill="none" stroke="#f7f1ed" stroke-width="8" stroke-linecap="round"/>
-  <path d="M77 84l23 22" fill="none" stroke="#f7f1ed" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="76" cy="44" r="5" fill="#9fb3ee"/>
-  <circle cx="100" cy="64" r="5" fill="#9fb3ee"/>
-  <circle cx="76" cy="84" r="5" fill="#9fb3ee"/>
+  <path d="M38 38v52" fill="none" stroke="#f7f5ef" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="38" cy="24" r="7" fill="#f7f5ef"/>
+  <path d="M58 25 58 103" fill="none" stroke="#687080" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M76 44c13 0 24 9 24 20S89 84 76 84" fill="none" stroke="#f7f5ef" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M77 84 100 106" fill="none" stroke="#f7f5ef" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="76" cy="44" r="5" fill="#6f8cff"/>
+  <circle cx="100" cy="64" r="5" fill="#6f8cff"/>
+  <circle cx="76" cy="84" r="5" fill="#6f8cff"/>
 </svg>
