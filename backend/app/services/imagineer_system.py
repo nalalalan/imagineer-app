@@ -1075,8 +1075,29 @@ class ImagineerSystem:
             merged[key] = value
         for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "reviews", "journal", "weekly_papers"):
             merged.setdefault(list_key, copy.deepcopy(DEFAULT_STATE[list_key]))
+        existing_reviewer = state.get("reviewer", {})
+        if not isinstance(existing_reviewer, dict):
+            existing_reviewer = {}
+        default_reviewer = copy.deepcopy(DEFAULT_STATE["reviewer"])
+        merged["reviewer"] = {**default_reviewer, **existing_reviewer}
+        merged["reviewer"]["source_urls"] = self._merge_unique_strings(
+            default_reviewer.get("source_urls", []),
+            existing_reviewer.get("source_urls", []),
+        )
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
+        return merged
+
+    def _merge_unique_strings(self, *values: list[Any]) -> list[str]:
+        merged: list[str] = []
+        seen: set[str] = set()
+        for value_list in values:
+            for value in value_list:
+                text = str(value).strip()
+                if not text or text in seen:
+                    continue
+                seen.add(text)
+                merged.append(text)
         return merged
 
     def _merge_list_by_key(self, state: dict[str, Any], list_key: str, item_key: str) -> None:
