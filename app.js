@@ -142,7 +142,7 @@ function render(ops, connected) {
   setText("#metric-ai-reviews", evidence.ai_reviews ?? "--");
   setText("#metric-journal", evidence.journal_entries ?? "--");
   setText("#updated-at", `updated ${formatDateTime(ops.generated_at || paper.updated_at)}`);
-  setText("#paper-status", `${clean(paper.status || "live")} - PDF manuscript generated from the current Imagineer experiment.`);
+  setText("#paper-status", "Current PDF.");
 
   renderReviewerReport(latestReview, reviewerAction, generatedAt);
   renderDimensions(ops.dimensions || []);
