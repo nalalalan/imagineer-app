@@ -62,7 +62,6 @@ DEFAULT_STATE: dict[str, Any] = {
             "https://sarrus.aolabs.io",
             "https://fluxcell.aolabs.io",
             "https://relay.aolabs.io",
-            "https://relaylive.aolabs.io",
             "https://ocean.aolabs.io",
             "https://talk.aolabs.io",
             "https://nerve.aolabs.io",
@@ -787,10 +786,8 @@ class ImagineerSystem:
             return "Sarrus portfolio"
         if "fluxcell.aolabs.io" in lowered:
             return "FluxCell portfolio"
-        if "relaylive.aolabs.io" in lowered:
-            return "Relay live dashboard"
         if "relay.aolabs.io" in lowered:
-            return "Relay product"
+            return "Relay dashboard"
         if "ocean.aolabs.io" in lowered:
             return "Ocean portfolio"
         if "talk.aolabs.io" in lowered:
