@@ -153,6 +153,8 @@ function renderReviewerReport(latestReview, action, generatedAt) {
     setText("#report-score", "--");
     setText("#report-generated", "No AI reviewer report has been generated yet.");
     setText("#report-verdict", "Run the reviewer to generate the first report.");
+    setText("#hero-next-title", action.title || "Run the autonomous AI reviewer.");
+    setText("#hero-next-body", action.body || "Pull the current role, packet, portfolio, and Disney Research context into one critique loop.");
     setText("#report-summary", "The report will read the public AO Labs evidence graph, compare it against WDI R&D mechanical Imagineering signals, and return the most useful critique.");
     setText("#report-top-issue", "Waiting for reviewer output.");
     setText("#report-action-title", action.title || "--");
@@ -168,7 +170,9 @@ function renderReviewerReport(latestReview, action, generatedAt) {
   setText("#report-score", Number.isFinite(latestReview.score) ? latestReview.score : "--");
   setText("#report-generated", `generated ${formatDateTime(generatedAt)} by ${latestReview.model || "AI reviewer"}`);
   setText("#report-verdict", latestReview.verdict || "Reviewer generated a report.");
-  setText("#report-summary", latestReview.reviewer_summary || latestReview.why_it_matters || "The reviewer generated a critique from the public source graph.");
+  setText("#hero-next-title", action.title || "No action returned");
+  setText("#hero-next-body", action.body || "The reviewer did not return a body for this action.");
+  setText("#report-summary", reviewerSummary(latestReview, action));
   setText("#report-top-issue", latestReview.top_issue || "No top issue returned.");
   setText("#report-action-title", action.title || "No action returned");
   setText("#report-action-body", action.body || "--");
@@ -206,6 +210,24 @@ function setList(selector, items) {
   node.innerHTML = cleanItems.length
     ? cleanItems.map((item) => `<li>${escapeHtml(item)}</li>`).join("")
     : `<li>Not returned in the latest review.</li>`;
+}
+
+function reviewerSummary(latestReview, action) {
+  const raw = latestReview.reviewer_summary || latestReview.why_it_matters || "The reviewer generated a critique from the public source graph.";
+  const cleaned = removeDanglingNextMove(raw);
+  if (cleaned) return cleaned;
+  if (action && action.title && action.body) return `${action.title} ${action.body}`;
+  return "The reviewer generated a critique from the public source graph.";
+}
+
+function removeDanglingNextMove(value) {
+  let text = clean(value);
+  text = text.replace(/\s+The best next move is to\s*$/i, "");
+  text = text.replace(/\s+The selected next move is to\s*$/i, "");
+  if (/[.!?]$/.test(text)) return text;
+  const lastStop = Math.max(text.lastIndexOf("."), text.lastIndexOf("!"), text.lastIndexOf("?"));
+  if (lastStop > 80) return text.slice(0, lastStop + 1);
+  return text;
 }
 
 function clean(value) {

@@ -651,7 +651,10 @@ class ImagineerSystem:
             "best_existing_evidence": self._string_list(review.get("best_existing_evidence"), 5, 260),
             "evidence_gaps": self._string_list(review.get("evidence_gaps"), 6, 260),
             "packet_edits": self._string_list(review.get("packet_edits"), 5, 260),
-            "reviewer_summary": review.get("reviewer_summary"),
+            "reviewer_summary": self._review_summary_text(
+                review.get("reviewer_summary"),
+                review.get("why_it_matters"),
+            ),
             "next_action": next_actions[0] if next_actions else None,
             "source_count": review.get("source_count"),
             "model": review.get("model"),
@@ -895,7 +898,10 @@ class ImagineerSystem:
             "evidence_gaps": self._string_list(parsed.get("evidence_gaps"), 6, 260),
             "next_actions": next_actions,
             "packet_edits": self._string_list(parsed.get("packet_edits"), 6, 260),
-            "reviewer_summary": str(parsed.get("reviewer_summary") or "")[:900],
+            "reviewer_summary": self._review_summary_text(
+                parsed.get("reviewer_summary"),
+                parsed.get("why_it_matters"),
+            ),
         }
 
     def _fallback_review(
@@ -1037,6 +1043,44 @@ class ImagineerSystem:
         if fallback_text:
             return self._first_sentence(fallback_text)
         return default
+
+    def _review_summary_text(self, primary: Any, fallback: Any = "") -> str:
+        text = self._clean_inline_text(str(primary or ""))
+        if not text:
+            text = self._clean_inline_text(str(fallback or ""))
+        if not text:
+            return ""
+
+        text = self._strip_incomplete_next_move(text)
+        if len(text) > 900:
+            text = self._complete_prefix(text, 900)
+        if text and text[-1] not in ".!?":
+            complete = self._complete_prefix(text, len(text))
+            if complete:
+                text = complete
+        return text
+
+    def _strip_incomplete_next_move(self, text: str) -> str:
+        patterns = (
+            r"\s+The best next move is to\s*$",
+            r"\s+The selected next move is to\s*$",
+        )
+        cleaned = text
+        for pattern in patterns:
+            cleaned = re.sub(pattern, "", cleaned, flags=re.I).rstrip()
+        return cleaned
+
+    def _complete_prefix(self, text: str, limit: int) -> str:
+        prefix = text[:limit].rstrip()
+        if not prefix:
+            return ""
+        if prefix[-1] in ".!?":
+            return prefix
+        stops = [prefix.rfind(marker) for marker in (". ", "! ", "? ")]
+        last_stop = max(stops)
+        if last_stop > 80:
+            return prefix[: last_stop + 1]
+        return prefix.rstrip(" ,;:")
 
     def _first_sentence(self, text: str) -> str:
         for marker in (". ", "! ", "? "):
