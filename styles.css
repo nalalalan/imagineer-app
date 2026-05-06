@@ -312,6 +312,19 @@ h2 {
   overflow-wrap: anywhere;
 }
 
+.report-explainer {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--soft-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.report-explainer b {
+  color: var(--ink);
+  font-weight: 900;
+}
+
 .report-lists {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
