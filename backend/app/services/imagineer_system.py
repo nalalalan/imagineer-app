@@ -648,9 +648,9 @@ class ImagineerSystem:
                 ),
             ),
             "why_it_matters": review.get("why_it_matters"),
-            "best_existing_evidence": self._string_list(review.get("best_existing_evidence"), 5, 260),
-            "evidence_gaps": self._string_list(review.get("evidence_gaps"), 6, 260),
-            "packet_edits": self._string_list(review.get("packet_edits"), 5, 260),
+            "best_existing_evidence": self._string_list(review.get("best_existing_evidence"), 5, 1200),
+            "evidence_gaps": self._string_list(review.get("evidence_gaps"), 6, 1200),
+            "packet_edits": self._string_list(review.get("packet_edits"), 5, 1200),
             "reviewer_summary": self._review_summary_text(
                 review.get("reviewer_summary"),
                 review.get("why_it_matters"),
@@ -850,11 +850,13 @@ class ImagineerSystem:
                     "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
                     "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
                     "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
-                    "next_actions must be an array of objects with title, body, expected_signal, and source."
+                    "next_actions must be an array of objects with title, body, expected_signal, and source. "
+                    "Every displayed string must be a complete sentence or complete phrase. Do not end any field "
+                    "mid-word, mid-name, or mid-sentence."
                 ),
                 input="Return json only.\n" + json.dumps(prompt, ensure_ascii=True),
                 text={"format": {"type": "json_object"}},
-                max_output_tokens=3000,
+                max_output_tokens=6000,
             )
             raw = self._response_output_text(response) or "{}"
             return self._normalize_review(json.loads(raw)), None
@@ -880,27 +882,34 @@ class ImagineerSystem:
                 continue
             next_actions.append(
                 {
-                    "title": str(item.get("title") or "Improve one proof artifact.")[:140],
-                    "body": str(item.get("body") or "")[:700],
-                    "expected_signal": str(item.get("expected_signal") or "")[:260],
-                    "source": str(item.get("source") or "")[:220],
+                    "title": self._bounded_display_text(item.get("title") or "Improve one proof artifact.", 220),
+                    "body": self._bounded_display_text(item.get("body") or "", 1200),
+                    "expected_signal": self._bounded_display_text(item.get("expected_signal") or "", 700),
+                    "source": self._bounded_display_text(item.get("source") or "", 500),
                 }
             )
             if len(next_actions) >= 5:
                 break
 
         return {
-            "verdict": str(parsed.get("verdict") or "Review completed; packet needs sharper evidence.")[:220],
+            "verdict": self._bounded_display_text(
+                parsed.get("verdict") or "Review completed; packet needs sharper evidence.",
+                500,
+            ),
             "score": max(0, min(int(parsed.get("score") or 0), 100)),
-            "top_issue": str(parsed.get("top_issue") or "The packet needs one concrete proof point.")[:260],
-            "why_it_matters": str(parsed.get("why_it_matters") or "")[:800],
-            "best_existing_evidence": self._string_list(parsed.get("best_existing_evidence"), 5, 220),
-            "evidence_gaps": self._string_list(parsed.get("evidence_gaps"), 6, 260),
+            "top_issue": self._bounded_display_text(
+                parsed.get("top_issue") or "The packet needs one concrete proof point.",
+                800,
+            ),
+            "why_it_matters": self._review_summary_text(parsed.get("why_it_matters"), "", max_chars=1600),
+            "best_existing_evidence": self._string_list(parsed.get("best_existing_evidence"), 5, 1200),
+            "evidence_gaps": self._string_list(parsed.get("evidence_gaps"), 6, 1200),
             "next_actions": next_actions,
-            "packet_edits": self._string_list(parsed.get("packet_edits"), 6, 260),
+            "packet_edits": self._string_list(parsed.get("packet_edits"), 6, 1200),
             "reviewer_summary": self._review_summary_text(
                 parsed.get("reviewer_summary"),
                 parsed.get("why_it_matters"),
+                max_chars=1600,
             ),
         }
 
@@ -963,7 +972,7 @@ class ImagineerSystem:
         for item in value:
             text = self._review_list_item_text(item)
             if text:
-                items.append(text[:max_chars].rstrip())
+                items.append(self._bounded_display_text(text, max_chars))
             if len(items) >= limit:
                 break
         return items
@@ -1044,7 +1053,7 @@ class ImagineerSystem:
             return self._first_sentence(fallback_text)
         return default
 
-    def _review_summary_text(self, primary: Any, fallback: Any = "") -> str:
+    def _review_summary_text(self, primary: Any, fallback: Any = "", max_chars: int = 1600) -> str:
         text = self._clean_inline_text(str(primary or ""))
         if not text:
             text = self._clean_inline_text(str(fallback or ""))
@@ -1052,13 +1061,15 @@ class ImagineerSystem:
             return ""
 
         text = self._strip_incomplete_next_move(text)
-        if len(text) > 900:
-            text = self._complete_prefix(text, 900)
-        if text and text[-1] not in ".!?":
-            complete = self._complete_prefix(text, len(text))
-            if complete:
-                text = complete
+        if len(text) > max_chars:
+            text = self._complete_prefix(text, max_chars)
         return text
+
+    def _bounded_display_text(self, value: Any, limit: int) -> str:
+        text = self._strip_incomplete_next_move(self._clean_inline_text(str(value or "")))
+        if len(text) <= limit:
+            return text
+        return self._complete_prefix(text, limit)
 
     def _strip_incomplete_next_move(self, text: str) -> str:
         patterns = (
@@ -1078,8 +1089,11 @@ class ImagineerSystem:
             return prefix
         stops = [prefix.rfind(marker) for marker in (". ", "! ", "? ")]
         last_stop = max(stops)
-        if last_stop > 80:
+        if last_stop > 0:
             return prefix[: last_stop + 1]
+        last_space = prefix.rfind(" ")
+        if last_space > 0:
+            return prefix[:last_space].rstrip(" ,;:") + "."
         return prefix.rstrip(" ,;:")
 
     def _first_sentence(self, text: str) -> str:
