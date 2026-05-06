@@ -835,7 +835,7 @@ class ImagineerSystem:
                     "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
                     "next_actions must be an array of objects with title, body, expected_signal, and source."
                 ),
-                input=json.dumps(prompt, ensure_ascii=True),
+                input="Return json only.\n" + json.dumps(prompt, ensure_ascii=True),
                 text={"format": {"type": "json_object"}},
                 max_output_tokens=3000,
             )
@@ -1167,7 +1167,7 @@ class ImagineerSystem:
                     "Return strict JSON for one ethical, concrete career-compounding action. "
                     "Keys: lane, title, body, why. No fabrication, spam, or unapproved applications."
                 ),
-                input=json.dumps(prompt, ensure_ascii=True),
+                input="Return json only.\n" + json.dumps(prompt, ensure_ascii=True),
                 text={"format": {"type": "json_object"}},
                 max_output_tokens=800,
             )
