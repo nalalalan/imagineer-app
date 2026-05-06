@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Imagineer State / AO Labs</title>
-  <meta name="description" content="A live proof system for creative R&amp;D: fit score, bottleneck, next action, evidence packet, and paper PDF.">
+  <title>Imagineer Reviewer Report / AO Labs</title>
+  <meta name="description" content="An AI reviewer report on Alan's WDI R&amp;D Imagineering readiness, reviewer status, and the live paper.">
   <link rel="canonical" href="https://imagineer.aolabs.io/">
   <meta name="twitter:image:alt" content="Imagineer by AO Labs preview card.">
   <meta name="twitter:image" content="https://imagineer.aolabs.io/og-image-20260506.png">
-  <meta name="twitter:description" content="A live proof system for creative R&amp;D: fit score, bottleneck, next action, evidence packet, and paper PDF.">
-  <meta name="twitter:title" content="Imagineer">
+  <meta name="twitter:description" content="An AI reviewer report on Alan's WDI R&amp;D Imagineering readiness, reviewer status, and the live paper.">
+  <meta name="twitter:title" content="Imagineer Reviewer Report">
   <meta name="twitter:card" content="summary_large_image">
   <meta property="og:image:alt" content="Imagineer by AO Labs preview card.">
   <meta property="og:image:height" content="630">
@@ -19,8 +19,8 @@
   <meta property="og:image" content="https://imagineer.aolabs.io/og-image-20260506.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="AO Labs">
-  <meta property="og:title" content="Imagineer">
-  <meta property="og:description" content="A live proof system for creative R&amp;D: fit score, bottleneck, next action, evidence packet, and paper PDF.">
+  <meta property="og:title" content="Imagineer Reviewer Report">
+  <meta property="og:description" content="An AI reviewer report on Alan's WDI R&amp;D Imagineering readiness, reviewer status, and the live paper.">
   <meta property="og:url" content="https://imagineer.aolabs.io/">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
@@ -40,25 +40,81 @@
       </div>
     </header>
 
-    <section class="dashboard" aria-label="Imagineer state dashboard">
-      <div class="dashboard-head">
-        <div>
-          <p class="kicker">WDI R&amp;D / Glendale</p>
-          <h1>Imagineer state</h1>
-          <p id="subtitle" class="subtitle">Checking the live system.</p>
+    <section class="panel report-panel" aria-labelledby="report-title">
+      <div class="report-layout">
+        <div class="report-main">
+          <p class="kicker">AI reviewer report</p>
+          <h1 id="report-title">WDI R&amp;D readout</h1>
+          <p id="report-generated" class="meta-line">Checking the latest autonomous review.</p>
+          <p id="report-verdict" class="verdict">Loading reviewer verdict.</p>
+          <p id="report-summary" class="report-summary">The page will show what the AI reviewer thinks about Alan's current public evidence for WDI R&amp;D Imagineering.</p>
         </div>
-        <div class="score-box" aria-label="Fit score">
-          <span>Fit</span>
-          <strong id="fit-score">--</strong>
-          <small id="confidence">--</small>
+        <div class="score-stack" aria-label="Reviewer and fit scores">
+          <div>
+            <span>Reviewer</span>
+            <strong id="report-score">--</strong>
+          </div>
+          <div>
+            <span>Fit</span>
+            <strong id="fit-score">--</strong>
+          </div>
         </div>
       </div>
 
-      <div class="state-list">
+      <div class="report-focus">
+        <article>
+          <span>Top issue</span>
+          <p id="report-top-issue">Waiting for reviewer output.</p>
+        </article>
+        <article>
+          <span>Next action</span>
+          <h2 id="report-action-title">--</h2>
+          <p id="report-action-body">--</p>
+          <small id="report-action-signal">--</small>
+          <small id="report-action-source">--</small>
+        </article>
+      </div>
+
+      <div class="report-lists" aria-label="Reviewer feedback lists">
+        <article>
+          <h2>Best evidence</h2>
+          <ul id="best-evidence"><li>Loading reviewer evidence.</li></ul>
+        </article>
+        <article>
+          <h2>Evidence gaps</h2>
+          <ul id="evidence-gaps"><li>Loading reviewer gaps.</li></ul>
+        </article>
+        <article>
+          <h2>Packet edits</h2>
+          <ul id="packet-edits"><li>Loading packet edits.</li></ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="status-title">
+      <div class="section-head">
+        <div>
+          <p class="kicker">Status of AI reviewer</p>
+          <h2 id="status-title">Reviewer system</h2>
+        </div>
+        <span id="updated-at">not loaded</span>
+      </div>
+
+      <div class="status-grid">
         <div class="state-row">
-          <span>System</span>
+          <span>Backend</span>
           <strong id="backend-state">checking</strong>
           <em id="backend-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Reviewer</span>
+          <strong id="reviewer-status">--</strong>
+          <em id="reviewer-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Model</span>
+          <strong id="reviewer-model">--</strong>
+          <em id="reviewer-sources">--</em>
         </div>
         <div class="state-row">
           <span>Target</span>
@@ -71,24 +127,9 @@
           <em id="bottleneck-detail">--</em>
         </div>
         <div class="state-row">
-          <span>Experiment</span>
-          <strong id="experiment-name">--</strong>
-          <em id="experiment-status">--</em>
-        </div>
-        <div class="state-row">
-          <span>Next action</span>
-          <strong id="action-title">--</strong>
-          <em id="action-body">--</em>
-        </div>
-        <div class="state-row">
-          <span>AI reviewer</span>
-          <strong id="reviewer-status">--</strong>
-          <em id="reviewer-detail">--</em>
-        </div>
-        <div class="state-row paper-row">
-          <span>Paper</span>
-          <strong id="paper-name">A proof-governed autonomy system for career conversion in embodied creative research and development</strong>
-          <a href="./imagineer-autonomous-position-system.pdf">Open PDF</a>
+          <span>Confidence</span>
+          <strong id="confidence">--</strong>
+          <em id="reviewer-scope">--</em>
         </div>
       </div>
 
@@ -111,21 +152,21 @@
         </div>
       </dl>
 
-      <div class="lower">
-        <section class="signals" aria-labelledby="signals-title">
-          <div class="section-head">
-            <h2 id="signals-title">Role-fit signals</h2>
-            <span id="updated-at">not loaded</span>
-          </div>
-          <div id="dimensions" class="dimensions"></div>
-        </section>
+      <section class="signals" aria-labelledby="signals-title">
+        <h2 id="signals-title">Role-fit signals</h2>
+        <div id="dimensions" class="dimensions"></div>
+      </section>
+    </section>
 
-        <section class="log" aria-labelledby="log-title">
-          <div class="section-head">
-            <h2 id="log-title">Recent log</h2>
-          </div>
-          <div id="journal" class="journal"></div>
-        </section>
+    <section class="panel paper-panel" aria-labelledby="paper-title">
+      <div>
+        <p class="kicker">Paper</p>
+        <h2 id="paper-title">A proof-governed autonomy system for career conversion in embodied creative research and development</h2>
+        <p id="paper-status" class="paper-copy">PDF manuscript generated from the live Imagineer experiment.</p>
+      </div>
+      <div class="paper-actions">
+        <a class="button-link" href="./imagineer-autonomous-position-system.pdf">Open PDF</a>
+        <a class="button-link secondary" href="./proof-packet.html">Open packet</a>
       </div>
     </section>
   </main>

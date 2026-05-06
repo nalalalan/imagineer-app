@@ -114,27 +114,29 @@
 \end{center}
 
 \vspace{0.35em}
-\noindent\textbf{Autonomous agents are increasingly able to plan, monitor, and execute tool-mediated workflows, but a career objective is normally treated as motivation rather than as a measurable control problem. We report an early proof-governed system that converts a target role, Walt Disney Imagineering Research and Development mechanical Imagineering in Glendale, into a logged state machine with role-fit dimensions, guardrails, daily cycles, evidence counters, and a weekly manuscript update. The system is intentionally bounded: it does not fabricate credentials, send applications, claim relationships, or perform sensitive outreach without human approval. At the first evidence lock, the system tracked six role-fit dimensions, four portfolio anchors, one daily cycle, zero proof logs, zero outreach events, and one published weekly paper snapshot. The current fit score was 61 of 100, with the dominant bottleneck being principal-level network signal. The contribution is therefore not a claim that the system has secured a job. It is a falsifiable protocol for making an otherwise ambiguous career-conversion process auditable, adaptive, and constrained by truthful evidence.}
+\noindent\textbf{Autonomous agents are increasingly able to plan, monitor, and execute tool-mediated workflows, but a career objective is normally treated as motivation rather than as a measurable control problem. We report a proof-governed system that converts a target role, Walt Disney Imagineering Research and Development mechanical Imagineering in Glendale, into a logged state machine with role-fit dimensions, guardrails, daily cycles, evidence counters, weekly manuscript updates, and an autonomous reviewer. The reviewer uses GPT-5.5 and a whole-public-AO-Labs evidence graph, including the CV, Sarrus, FluxCell, Relay, Relay Live, Ocean, other public project surfaces, the WDI proof packet, the active WDI listing, and Disney Research context. It can critique evidence autonomously but cannot send outreach, claim relationships, submit applications, or use private email/contact data without approval. At the current evidence lock on 6 May 2026, the system tracked six role-fit dimensions, four portfolio anchors, three proof logs, one daily cycle, five AI reviews, zero outreach events, one reviewer-ready artifact, and eleven journal entries. The public dashboard is now report-first: the primary section is the reviewer-generated critique of Alan's current evidence, followed by reviewer-system status and the manuscript artifact. The live fit score was 84 of 100 with a strong-and-visible confidence label, while the autonomous reviewer scored the public packet 76 of 100 and identified the bottleneck as evidentiary density: one mechanism-centered Sarrus or FluxCell artifact must show geometry, travel, load path, actuation margin, prototype build, test result, and iteration. The contribution is therefore not a claim that the system has secured a job. It is a falsifiable protocol for making an otherwise ambiguous career-conversion process auditable, adaptive, and constrained by truthful evidence.}
 
 \newpage
 \pagestyle{fancy}
 
 \section{Introduction}
 
-Tool-using language-model systems can now reason, call external services, write artifacts, and update deployed software~\cite{yao_react_2023,schick_toolformer_2023,wu_autogen_2023,wang_survey_2023}. These capabilities create an opportunity to treat long-horizon personal objectives as monitored systems rather than as episodic intentions. A career target is especially difficult because the desired outcome depends on evidence quality, technical fit, social trust, timing, applications, and human judgment. Without a state model, repeated effort can feel intense while remaining scientifically uninterpretable.
+Tool-using language-model systems can now reason, call external services, write artifacts, and update deployed software~\cite{yao_react_2023,schick_toolformer_2023,wu_autogen_2023,wang_survey_2023}. These capabilities create an opportunity to treat long-horizon personal objectives as monitored systems rather than as episodic intentions, in the older spirit of autonomic systems and closed-loop discovery workflows~\cite{kephart_vision_2003,kusne_closed_loop_2020}. A career target is especially difficult because the desired outcome depends on evidence quality, technical fit, social trust, timing, applications, and human judgment. Without a state model, repeated effort can feel intense while remaining scientifically uninterpretable.
 
 This paper describes an early deployment of an autonomous career-evidence system aimed at WDI Research and Development mechanical Imagineering roles. The system uses the active WDI Research and Development Imagineer - Mechanical Design Engineer role as the live rung and the Principal R\&D Imagineer - Mechanical Engineer profile as the north-star target~\cite{disney_wdi_mechanical_2026}. The positioning line is deliberately stable: mechanical PhD, soft robotics, creative prototyping, and AI-assisted tools for human-facing physical experiences.
 
-The design borrows from proof-governed revenue experimentation: define a measurable state, choose the current bottleneck, constrain allowed actions, record interventions, and update a paper from real evidence rather than from aspiration. The system is not allowed to invent credentials, inflate relationships, send spam, or apply on behalf of the operator. It can monitor state, update dashboards, maintain a paper, identify the next constraint, and create or improve public artifacts that are grounded in existing work.
+The design borrows from proof-governed revenue experimentation: define a measurable state, choose the current bottleneck, constrain allowed actions, record interventions, and update a paper from real evidence rather than from aspiration. The system is not allowed to invent credentials, inflate relationships, send spam, or apply on behalf of the operator. It can monitor state, update dashboards, maintain a paper, identify the next constraint, run an evidence-only AI review, and create or improve public artifacts that are grounded in existing work.
 
 \section{System architecture}
 
-The first deployment consists of a public dashboard, a Railway-hosted backend, a JSON runtime state file, and scheduled automation. The backend exposes health, operations-check, journal, weekly-paper, event, and daily-cycle endpoints. The dashboard is intentionally minimal: it shows backend state, fit score, bottleneck, weekly paper status, evidence counters, active experiment, next action, role-fit dimensions, and recent log entries.
+The deployment consists of a public dashboard, a Railway-hosted backend, a JSON runtime state file mounted on a persistent volume, and scheduled or operator-triggered automation. The backend exposes health, operations-check, journal, weekly-paper, event, daily-cycle, and AI-review endpoints. The dashboard is intentionally minimal and report-first. Its three sections are: a reviewer-generated readout on Alan's current public evidence, a compact status surface for the AI reviewer and role-fit dimensions, and the paper/PDF artifact. The dashboard does not treat the reviewer as the main subject; it treats the reviewer as an instrument that generates feedback for human judgment.
+
+The reviewer is a separate loop rather than a human-contact substitute. It builds a source packet from the live state, the target listing, the proof packet, the paper PDF, the CV, Sarrus, FluxCell, Relay, Relay Live, Ocean, Talk, Nerve, Duet, Violin, Yum, Lily, AO Labs home, Disney Research roster, and a Disney Research bipedal-character paper page. It also includes a compact identity profile summarizing the operator as a mechanical engineering PhD candidate building soft robotic materials, reconfigurable mechanisms, morphing interfaces, research papers, public project surfaces, and autonomous systems. The model returns a verdict, score, top issue, evidence gaps, packet edits, and next actions as JSON. If the model fails or times out, a deterministic fallback reviewer produces a conservative critique and records the fallback reason.
 
 \begin{table}[tbp]
 \centering
 \small
-\caption{State variables at the first evidence lock. Values are reported from the live system after the first daily-cycle and weekly-paper update.}
+\caption{State variables at the current evidence lock. Values are reported from the live system after deployment of the whole-public-AO-Labs GPT-5.5 reviewer on 6 May 2026.}
 \label{tab:state}
 \rowcolors{2}{SignalPale}{white}
 \begin{tabularx}{\textwidth}{L{0.30\textwidth}Y}
@@ -145,29 +147,56 @@ The first deployment consists of a public dashboard, a Railway-hosted backend, a
 Target company and location & Walt Disney Imagineering R\&D, Glendale, California \\
 Live rung & WDI Research and Development Imagineer - Mechanical Design Engineer \\
 North star & Principal R\&D Imagineer - Mechanical Engineer \\
-Fit score & 61 of 100 after one daily cycle \\
-Dominant bottleneck & Principal-level network signal \\
-Evidence counters & Zero proof logs; one daily cycle; zero outreach events; four portfolio anchors \\
-Active experiment & WDI proof packet v0 \\
-Human approval boundary & Applications, sensitive outreach, referrals, and claims involving real people \\
+Fit score & 84 of 100 with strong-and-visible confidence \\
+Dominant bottleneck & Review intelligence: repeatable critique, source coverage, and approved escalation \\
+Evidence counters & Three proof logs; one daily cycle; five AI reviews; zero outreach events; four portfolio anchors; eleven journal entries \\
+Active experiment & Autonomous AI reviewer v0 \\
+Reviewer source graph & Twenty-four live sources in the latest production run, spanning public AO Labs projects and WDI/Disney Research context \\
+Human approval boundary & Applications, sensitive outreach, referrals, claims involving real people, and any private contact/email data \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Decision policy}
 
-The policy scores six role-fit dimensions: mechanical depth, creative prototyping, human-facing physical experience, principal-level network, Glendale application packet, and the paper/system itself. The next action is chosen from the weakest current signal. At the first lock, the weakest signal was principal-level network, so the selected intervention was to create one real review path. This means preparing an artifact for a reviewer and asking a specific fit question, not sending automated messages or pretending a relationship exists.
+The policy scores six role-fit dimensions: mechanical depth, creative prototyping, human-facing physical experience, review intelligence, Glendale application packet, and the paper/system itself. Each dimension now reports what it measures, its score basis, and the next evidence that would move the signal. The score basis is intentionally mechanical: a base prior from the state file, plus logged event impact, portfolio evidence tags, and daily-cycle evidence, capped at 100. The next action is chosen from the weakest current signal. In the current lock, the weakest signal is review intelligence. The selected intervention is to run the autonomous reviewer and route its highest-leverage critique into a concrete public artifact improvement.
 
-This policy is intentionally conservative. It can make public artifacts, update the dashboard, refresh the manuscript, and record evidence. It cannot manufacture the social proof that a principal-level role requires. If an action requires a real person's attention or reputation, the system must stop at preparation and request approval before sending.
+This policy is intentionally conservative. It can make public artifacts, update the dashboard, refresh the manuscript, run autonomous critique, and record evidence. It cannot manufacture the social proof that a principal-level role requires. If an action requires a real person's attention or reputation, the system must stop at preparation and request approval before sending. The reviewer therefore becomes a repeatable calibration instrument, not a license to automate human outreach.
 
 \section{Results}
 
-The current deployment is functional but early. The dashboard and backend are live, the weekly paper endpoint can publish a snapshot, and the site exposes a PDF manuscript. The first daily cycle increased the fit score from 60 to 61 by recording the selected action and improving the leadership-network dimension from 34 to 39. This is useful as an instrumentation result, not as a job-market result.
+The current deployment is functional and has moved beyond the initial dashboard-only state. The dashboard and backend are live, the weekly paper endpoint can publish a snapshot, the site exposes a PDF manuscript, and the AI reviewer has produced live production critiques from the public evidence graph. The latest reviewer run used GPT-5.5, consumed 24 sources, returned a reviewer score of 76 of 100, and identified a single dominant issue: the proof packet states the correct mechanical proof standard, but the public artifacts do not yet show one mechanism-centered Sarrus or FluxCell page with geometry, travel, load path, constraint scheme, actuation margin, prototype build, test result, and iteration.
+
+After the latest interface revision, the live site no longer leads with generic status tiles. It leads with the reviewer report: verdict, reviewer score, summary, top issue, best existing evidence, evidence gaps, packet edits, and the selected next action. The reviewer-system section remains visible, but its purpose is operational transparency: model, source count, review count, approval boundary, fit score, bottleneck, evidence counters, and role-fit score explanations. This distinction matters because the useful artifact for the operator is the critique, not a status page about the critique generator.
+
+The system-level fit score increased to 84 of 100, but this should be interpreted as improved instrumentation and artifact readiness, not as an external hiring probability. The reviewer result is deliberately stricter than the system score. It confirms that the overall direction is credible for WDI R\&D while rejecting the idea that the current public packet is already principal-level proof.
 
 \begin{table}[tbp]
 \centering
 \small
-\caption{Role-fit dimensions after the first autonomous cycle. Scores are internal operating metrics, not external hiring probabilities.}
+\caption{Latest autonomous reviewer result. The reviewer is a GPT-5.5 evidence critique over the public AO Labs graph, not a human recommendation.}
+\label{tab:reviewer}
+\rowcolors{2}{SignalPale}{white}
+\begin{tabularx}{\textwidth}{L{0.30\textwidth}Y}
+\toprule
+\rowcolor{ClayLine}
+\textbf{Field} & \textbf{Recorded value} \\
+\midrule
+Model & GPT-5.5 via the Responses API \\
+Scope & Whole public AO Labs graph plus WDI role and Disney Research context \\
+Source count & 24 sources in the latest production run \\
+Reviewer score & 76 of 100 \\
+Verdict & Credible WDI R\&D direction, but still more target specification than reviewer-ready mechanical portfolio \\
+Top issue & Need one Sarrus or FluxCell mechanism artifact with geometry, travel, load path, constraints, actuation margin, prototype build, test result, and iteration \\
+Next action & Build one reviewer-proof Sarrus mechanism page \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Role-fit dimensions after the current autonomous reviewer cycle. Scores are internal operating metrics, not external hiring probabilities; the live dashboard exposes the measurement target, score basis, and next evidence for each row.}
 \label{tab:dimensions}
 \rowcolors{2}{SignalPale}{white}
 \begin{tabularx}{\textwidth}{L{0.34\textwidth}L{0.14\textwidth}Y}
@@ -175,25 +204,25 @@ The current deployment is functional but early. The dashboard and backend are li
 \rowcolor{ClayLine}
 \textbf{Dimension} & \textbf{Score} & \textbf{Current interpretation} \\
 \midrule
-Mechanical depth & 80 & Strong existing base, but still benefits from visible calculations and design artifacts. \\
+Mechanical depth & 100 & Strong internal score from accumulated proof/system events, but the reviewer still asks for one public mechanism calculation artifact. \\
 Creative prototyping & 82 & Strongest signal; should remain attached to concrete physical demonstrations. \\
 Human-facing physical experience & 72 & Credible but needs clearer guest-facing translation. \\
-Principal-level network & 39 & Current bottleneck; requires real review paths and trust signals. \\
-Glendale packet & 50 & Needs a compact, role-specific application surface. \\
-Autonomous career system & 44 & Early but now instrumented through dashboard, endpoints, and weekly manuscript. \\
+Review intelligence & 55 & Current bottleneck; requires repeatable critique, source coverage, and optional approved human escalation. \\
+Glendale packet & 98 & Strong internal readiness score, but the public packet still needs a denser reviewer-proof technical artifact. \\
+Autonomous career system & 100 & Backend, dashboard, durable state, reviewer, journal, and paper loop are live. \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
 \section{Limitations and guardrails}
 
-The system cannot guarantee an offer. A job decision depends on timing, hiring needs, competition, interview performance, portfolio interpretation, and institutional context. The useful claim is narrower: the system can make progress legible, choose the next bottleneck, prevent fake progress, and turn repeated effort into evidence. It should be evaluated by proof velocity, reviewer-ready artifacts, quality of feedback paths, application readiness, interviews, and eventual conversion.
+The system cannot guarantee an offer. A job decision depends on timing, hiring needs, competition, interview performance, portfolio interpretation, and institutional context. The useful claim is narrower: the system can make progress legible, choose the next bottleneck, prevent fake progress, and turn repeated effort into evidence. It should be evaluated by proof velocity, reviewer-ready artifacts, quality of critique paths, application readiness, interviews, and eventual conversion.
 
-The guardrails are part of the result. The system forbids fabricated credentials, fake outreach, invented Disney relationships, automated applications, and claims that are not supported by public or logged evidence. These constraints reduce short-term aggressiveness, but they preserve interpretability. If the system ever reports strong progress, that progress should be traceable to artifacts, logs, reviewers, applications, or outcomes.
+The guardrails are part of the result. The system forbids fabricated credentials, fake outreach, invented Disney relationships, automated applications, and claims that are not supported by public or logged evidence. Private email/contact data is excluded from the reviewer unless explicitly approved. These constraints reduce short-term aggressiveness, but they preserve interpretability. If the system ever reports strong progress, that progress should be traceable to artifacts, logs, AI reviews, human approvals, applications, or outcomes.
 
 \section{Availability}
 
-The live dashboard is available at \url{https://imagineer.aolabs.io/} once DNS resolves, with a fallback at \url{https://aolabs.io/imagineer/}. The live backend is available at \url{https://imagineer-app-production.up.railway.app/api/imagineer/ops-check}. The weekly paper endpoint is available at \url{https://imagineer-app-production.up.railway.app/api/imagineer/weekly-paper}. This manuscript is an initial public artifact and should be refreshed from logged evidence as the system accumulates real proof.
+The live dashboard is available at \url{https://imagineer.aolabs.io/}, with a fallback at \url{https://aolabs.io/imagineer/}. The live backend exposes \url{https://imagineer.aolabs.io/api/imagineer/ops-check}, \url{https://imagineer.aolabs.io/api/imagineer/weekly-paper}, and \url{https://imagineer.aolabs.io/api/imagineer/ai-review}. This manuscript is a public artifact and should be refreshed from logged evidence as the system accumulates real proof.
 
 \printbibliography
 

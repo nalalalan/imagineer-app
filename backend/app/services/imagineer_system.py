@@ -636,10 +636,15 @@ class ImagineerSystem:
             "score": review.get("score"),
             "verdict": review.get("verdict"),
             "top_issue": review.get("top_issue"),
+            "why_it_matters": review.get("why_it_matters"),
+            "best_existing_evidence": review.get("best_existing_evidence") or [],
+            "evidence_gaps": review.get("evidence_gaps") or [],
+            "packet_edits": review.get("packet_edits") or [],
             "reviewer_summary": review.get("reviewer_summary"),
             "next_action": next_actions[0] if next_actions else None,
             "source_count": review.get("source_count"),
             "model": review.get("model"),
+            "fallback_reason": review.get("fallback_reason"),
         }
 
     def _collect_review_sources(self, state: dict[str, Any], ops: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1056,7 +1061,10 @@ class ImagineerSystem:
             )
             portfolio_points = portfolio_tags.count(key)
             daily_points = sum(1 for event in events if event.get("kind") == "daily_cycle" and key in event.get("tags", []))
-            score = min(100, int(dimension["score"]) + event_points * 4 + portfolio_points * 2 + daily_points)
+            base_score = int(dimension["score"])
+            event_score = event_points * 4
+            portfolio_score = portfolio_points * 2
+            score = min(100, base_score + event_score + portfolio_score + daily_points)
             scored.append(
                 {
                     "key": key,
@@ -1065,6 +1073,10 @@ class ImagineerSystem:
                     "gap": max(0, 100 - score),
                     "target_signal": self._dimension_target_signal(key, dimension["target_signal"]),
                     "next_signal": self._signal_action_for_dimension(key),
+                    "score_basis": (
+                        f"Base {base_score}; +{event_score} from logged event impact; "
+                        f"+{portfolio_score} from portfolio evidence tags; +{daily_points} from daily-cycle evidence; capped at 100."
+                    ),
                 }
             )
         return scored
