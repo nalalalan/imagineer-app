@@ -90,6 +90,16 @@ def weekly_paper_run() -> dict[str, Any]:
     return SYSTEM.run_weekly_paper_update()
 
 
+@app.get("/api/imagineer/ai-review")
+def ai_review() -> dict[str, Any]:
+    return SYSTEM.reviewer_report()
+
+
+@app.post("/api/imagineer/ai-review/run")
+def ai_review_run() -> dict[str, Any]:
+    return SYSTEM.run_ai_review()
+
+
 @app.post("/api/imagineer/events")
 def record_event(event: ImagineerEvent) -> dict[str, Any]:
     return SYSTEM.record_event(event.model_dump())

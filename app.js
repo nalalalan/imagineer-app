@@ -21,17 +21,23 @@ const fallbackOps = {
     target_signal: "Real conversations, referrals, project collaborators, and evidence of technical leadership."
   },
   next_action: {
-    title: "Create one real review path.",
-    body: "Identify one WDI-adjacent reviewer and prepare a specific review ask around one artifact."
+    title: "Run the autonomous AI reviewer.",
+    body: "Pull current role, packet, portfolio, and Disney Research context into one critique loop."
+  },
+  reviewer: {
+    mode: "autonomous_ai",
+    status: "not_run",
+    latest: null
   },
   active_experiment: {
-    name: "WDI proof packet v0",
+    name: "Autonomous AI reviewer v0",
     status: "active",
-    hypothesis: "Convert existing soft-robotics work into concise WDI R&D evidence."
+    hypothesis: "Critique current evidence against WDI R&D fit."
   },
   evidence: {
     proof_events: 0,
     daily_cycles: 0,
+    ai_reviews: 0,
     reviewer_ready_artifacts: 0,
     journal_entries: 0
   },
@@ -51,13 +57,15 @@ function setText(selector, value) {
   if (node) node.textContent = value ?? "--";
 }
 
-async function request(path) {
+async function request(path, options = {}) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), options.timeout || 8000);
   try {
     const response = await fetch(`${apiBase}${path}`, {
+      method: options.method || "GET",
       cache: "no-store",
       headers: { "Content-Type": "application/json" },
+      body: options.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -77,6 +85,24 @@ async function loadState() {
   }
 }
 
+async function runReview() {
+  const button = $("#run-review");
+  button.disabled = true;
+  button.textContent = "Running";
+  setText("#reviewer-status", "running");
+  setText("#reviewer-detail", "collecting sources and critiquing packet");
+  try {
+    const result = await request("/api/imagineer/ai-review/run", { method: "POST", timeout: 30000 });
+    render(result.ops || fallbackOps, true);
+  } catch {
+    setText("#reviewer-status", "failed");
+    setText("#reviewer-detail", "review did not complete");
+  } finally {
+    button.disabled = false;
+    button.textContent = "Run review";
+  }
+}
+
 function render(ops, connected) {
   const evidence = ops.evidence || {};
   const bottleneck = ops.current_bottleneck || {};
@@ -84,6 +110,9 @@ function render(ops, connected) {
   const paper = ops.weekly_paper || {};
   const action = ops.next_action || {};
   const target = ops.target || {};
+  const reviewer = ops.reviewer || {};
+  const latestReview = reviewer.latest || {};
+  const reviewerAction = latestReview.next_action || {};
 
   setText("#backend-state", connected ? "online" : "fallback");
   $("#backend-state").className = connected ? "is-ok" : "is-warn";
@@ -99,10 +128,12 @@ function render(ops, connected) {
   setText("#experiment-status", clean(experiment.status || ops.status));
   setText("#action-title", action.title || "--");
   setText("#action-body", action.body || "--");
+  setText("#reviewer-status", latestReview.verdict || clean(reviewer.status || "not run"));
+  setText("#reviewer-detail", latestReview.top_issue || reviewerAction.title || "No autonomous review has run yet.");
   setText("#paper-name", paperName);
   setText("#metric-proof", evidence.proof_events ?? "--");
   setText("#metric-cycles", evidence.daily_cycles ?? "--");
-  setText("#metric-reviewer", evidence.reviewer_ready_artifacts ?? "--");
+  setText("#metric-ai-reviews", evidence.ai_reviews ?? "--");
   setText("#metric-journal", evidence.journal_entries ?? "--");
   setText("#updated-at", `updated ${formatDateTime(ops.generated_at || paper.updated_at)}`);
   renderDimensions(ops.dimensions || []);
@@ -158,4 +189,5 @@ function escapeHtml(value) {
 }
 
 $("#refresh").addEventListener("click", loadState);
+$("#run-review").addEventListener("click", runReview);
 loadState();

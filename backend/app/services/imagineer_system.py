@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import copy
+import html
 import json
 import os
+import re
 import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 
 POSITIONING_LINE = (
@@ -25,6 +29,7 @@ def _today() -> str:
 
 
 DEFAULT_STATE: dict[str, Any] = {
+    "active_experiment_id": "autonomous-ai-reviewer-v0",
     "target": {
         "north_star_title": "Principal R&D Imagineer - Mechanical Engineer",
         "active_rung_title": "WDI Research & Development Imagineer - Mechanical Design Engineer",
@@ -32,16 +37,30 @@ DEFAULT_STATE: dict[str, Any] = {
         "location": "Glendale, California",
         "active_listing_job_id": "10146734",
         "active_listing_posted": "2026-04-08",
-        "active_listing_url": "https://www.disneycareers.com/en/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
+        "active_listing_url": "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
         "north_star_note": "Use the principal title as the north-star profile; verify any open principal posting before applying.",
     },
     "positioning": POSITIONING_LINE,
     "guardrails": [
         "No fabricated credentials, projects, relationships, recommendations, or outcomes.",
-        "No spam or fake outreach. Human approval is required before applications, direct referrals, or sensitive messages.",
+        "No spam or fake outreach. Human approval is required before applications, direct referrals, sensitive messages, or external requests.",
         "Optimize for truthful evidence: working prototypes, clear figures, test logs, concise writing, and real conversations.",
         "Respect Disney and third-party intellectual property; focus on Alan-owned public work and general role-fit evidence.",
     ],
+    "reviewer": {
+        "mode": "autonomous_ai",
+        "model": "gpt-5.5",
+        "approval_boundary": "AI critique can run autonomously. Human approval is required before any external outreach or application action.",
+        "source_urls": [
+            "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
+            "https://imagineer.aolabs.io/proof-packet.html",
+            "https://sarrus.aolabs.io",
+            "https://fluxcell.aolabs.io",
+            "https://ocean.aolabs.io",
+            "https://la.disneyresearch.com/researchers/",
+            "https://la.disneyresearch.com/publication/design-and-control-of-a-bipedal-robotic-character/",
+        ],
+    },
     "portfolio": [
         {
             "name": "Sarrus",
@@ -108,15 +127,27 @@ DEFAULT_STATE: dict[str, Any] = {
     ],
     "experiments": [
         {
+            "id": "autonomous-ai-reviewer-v0",
+            "name": "Autonomous AI reviewer v0",
+            "status": "active",
+            "hypothesis": (
+                "If the system repeatedly critiques Alan-owned evidence against live WDI R&D signals, "
+                "the next useful artifact becomes obvious without waiting for a human reviewer."
+            ),
+            "variable": "Source coverage and critique specificity.",
+            "success_metric": "One autonomous review run, a ranked gap list, and one concrete packet or portfolio improvement selected from the review.",
+            "started_at": "2026-05-06",
+        },
+        {
             "id": "wdi-proof-packet-v0",
             "name": "WDI proof packet v0",
-            "status": "active",
+            "status": "supporting",
             "hypothesis": (
                 "If Alan converts existing soft-robotics work into a concise WDI R&D proof packet, "
                 "the gap shifts from unclear fit to visible studio relevance."
             ),
             "variable": "Translation quality from technical result to human-facing physical experience.",
-            "success_metric": "Five proof logs, one reviewer-ready portfolio artifact, and one warm review request inside seven days.",
+            "success_metric": "Five proof logs, one reviewer-ready portfolio artifact, and one AI critique cycle inside seven days.",
             "started_at": "2026-05-06",
         },
         {
@@ -139,6 +170,7 @@ DEFAULT_STATE: dict[str, Any] = {
         },
     ],
     "events": [],
+    "reviews": [],
     "journal": [
         {
             "id": "seed-001",
@@ -178,6 +210,7 @@ class ImagineerSystem:
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
         reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
         reviewer_ready_portfolio = [item for item in state["portfolio"] if "reviewer_ready" in item.get("tags", [])]
+        ai_reviews = state.get("reviews", [])
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
 
         return {
@@ -189,12 +222,14 @@ class ImagineerSystem:
             "confidence": self._confidence_label(fit_score),
             "current_bottleneck": weakest,
             "next_action": next_action,
+            "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
             "evidence": {
                 "proof_events": len(proof_events),
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
+                "ai_reviews": len(ai_reviews),
                 "portfolio_items": len(state["portfolio"]),
                 "reviewer_ready_artifacts": len(reviewer_ready_events) + len(reviewer_ready_portfolio),
                 "journal_entries": len(state["journal"]),
@@ -214,7 +249,7 @@ class ImagineerSystem:
                 "openai_planner": bool(os.getenv("OPENAI_API_KEY")),
                 "openai_model": self._openai_model() if os.getenv("OPENAI_API_KEY") else None,
                 "storage": "json_runtime_state",
-                "write_surface": "events_only",
+                "write_surface": "events_and_ai_reviews",
             },
         }
 
@@ -287,6 +322,55 @@ class ImagineerSystem:
             "thesis": "Career progress becomes optimizable when evidence, decisions, experiments, and ethics are logged as a closed-loop system.",
             "sections": sections,
         }
+
+    def reviewer_report(self, compact: bool = False) -> dict[str, Any]:
+        state = self._load_state()
+        return self._reviewer_report_from_state(state, compact=compact)
+
+    def run_ai_review(self) -> dict[str, Any]:
+        with self._state_lock:
+            state = self._load_state()
+            ops = self.ops_check_without_weekly(state)
+            sources = self._collect_review_sources(state, ops)
+            review = self._openai_review(state, ops, sources)
+            review_model = self._openai_model()
+            if review is None:
+                review = self._fallback_review(state, ops, sources)
+                review_model = "deterministic_fallback"
+
+            review["id"] = str(uuid.uuid4())
+            review["created_at"] = _utc_now()
+            review["model"] = review_model
+            review["source_count"] = len(sources)
+            review["sources"] = [
+                {
+                    "name": source["name"],
+                    "url": source.get("url", ""),
+                    "status": source["status"],
+                    "chars": len(source.get("text", "")),
+                }
+                for source in sources
+            ]
+
+            state.setdefault("reviews", []).insert(0, review)
+            state["reviews"] = state["reviews"][:50]
+
+            event = {
+                "id": str(uuid.uuid4()),
+                "created_at": review["created_at"],
+                "date": _today(),
+                "kind": "ai_review",
+                "title": "AI reviewer critique generated",
+                "notes": f"{review['verdict']} Top issue: {review['top_issue']}",
+                "link": "https://imagineer.aolabs.io/proof-packet.html",
+                "tags": ["ai_reviewer", "paper_system", "application_packet", "mechanical_depth"],
+                "impact": 2,
+            }
+            state["events"].insert(0, event)
+            state["events"] = state["events"][:300]
+            self._append_journal_from_event(state, event)
+            self._save_state(state)
+            return {"ok": True, "review": review, "ops": self.ops_check()}
 
     def run_weekly_paper_update(self) -> dict[str, Any]:
         with self._state_lock:
@@ -464,6 +548,7 @@ class ImagineerSystem:
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
         reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
         reviewer_ready_portfolio = [item for item in state["portfolio"] if "reviewer_ready" in item.get("tags", [])]
+        ai_reviews = state.get("reviews", [])
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
         return {
             "target": state["target"],
@@ -471,17 +556,297 @@ class ImagineerSystem:
             "confidence": self._confidence_label(fit_score),
             "current_bottleneck": weakest,
             "next_action": next_action,
+            "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
             "evidence": {
                 "proof_events": len(proof_events),
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
+                "ai_reviews": len(ai_reviews),
                 "portfolio_items": len(state["portfolio"]),
                 "reviewer_ready_artifacts": len(reviewer_ready_events) + len(reviewer_ready_portfolio),
                 "journal_entries": len(state["journal"]),
             },
         }
+
+    def _reviewer_report_from_state(self, state: dict[str, Any], compact: bool = False) -> dict[str, Any]:
+        latest = next(iter(state.get("reviews", [])), None)
+        report = {
+            "mode": state.get("reviewer", {}).get("mode", "autonomous_ai"),
+            "status": "review_ready" if latest else "not_run",
+            "approval_boundary": state.get("reviewer", {}).get("approval_boundary", ""),
+            "latest": self._compact_review(latest) if latest else None,
+            "review_count": len(state.get("reviews", [])),
+            "source_count": len(state.get("reviewer", {}).get("source_urls", [])),
+        }
+        if compact:
+            return report
+        return {
+            **report,
+            "reviews": state.get("reviews", [])[:10],
+            "source_urls": state.get("reviewer", {}).get("source_urls", []),
+        }
+
+    def _compact_review(self, review: dict[str, Any] | None) -> dict[str, Any] | None:
+        if not review:
+            return None
+        next_actions = review.get("next_actions") or []
+        return {
+            "id": review.get("id"),
+            "created_at": review.get("created_at"),
+            "score": review.get("score"),
+            "verdict": review.get("verdict"),
+            "top_issue": review.get("top_issue"),
+            "reviewer_summary": review.get("reviewer_summary"),
+            "next_action": next_actions[0] if next_actions else None,
+            "source_count": review.get("source_count"),
+            "model": review.get("model"),
+        }
+
+    def _collect_review_sources(self, state: dict[str, Any], ops: dict[str, Any]) -> list[dict[str, Any]]:
+        sources: list[dict[str, Any]] = []
+
+        system_snapshot = {
+            "target": state["target"],
+            "positioning": state["positioning"],
+            "fit_score": ops["fit_score"],
+            "current_bottleneck": ops["current_bottleneck"],
+            "next_action": ops["next_action"],
+            "active_experiment": ops["active_experiment"],
+            "dimensions": ops["dimensions"],
+            "portfolio": state["portfolio"],
+            "recent_journal": state["journal"][:8],
+            "guardrails": state["guardrails"],
+        }
+        sources.append(
+            {
+                "name": "Live Imagineer state",
+                "url": "internal://ops-check",
+                "status": "ok",
+                "text": json.dumps(system_snapshot, ensure_ascii=True, indent=2)[:7000],
+            }
+        )
+
+        urls: list[str] = []
+        reviewer_urls = state.get("reviewer", {}).get("source_urls", [])
+        target_url = state.get("target", {}).get("active_listing_url")
+        if target_url:
+            urls.append(str(target_url))
+            if "www.disneycareers.com/en/job/" in str(target_url):
+                urls.append(str(target_url).replace("www.disneycareers.com/en/job/", "jobs.disneycareers.com/job/"))
+        urls.extend(str(url) for url in reviewer_urls)
+        urls.extend(str(item.get("url")) for item in state.get("portfolio", []) if item.get("url"))
+
+        seen: set[str] = set()
+        for url in urls:
+            clean_url = url.strip()
+            if not clean_url or clean_url in seen:
+                continue
+            seen.add(clean_url)
+            sources.append(self._fetch_url_source(clean_url))
+        return sources[:14]
+
+    def _fetch_url_source(self, url: str) -> dict[str, Any]:
+        try:
+            request = Request(
+                url,
+                headers={
+                    "User-Agent": "AO-Labs-Imagineer-AI-Reviewer/1.0",
+                    "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.3",
+                },
+            )
+            with urlopen(request, timeout=7) as response:
+                content_type = response.headers.get("content-type", "")
+                raw = response.read(220_000)
+            if "pdf" in content_type.lower() or url.lower().endswith(".pdf"):
+                text = "PDF source detected. Public artifact exists, but this reviewer run only extracts HTML/text sources."
+            else:
+                decoded = raw.decode("utf-8", errors="ignore")
+                text = self._html_to_text(decoded)
+            return {
+                "name": self._source_name_from_url(url),
+                "url": url,
+                "status": "ok",
+                "text": text[:5000],
+            }
+        except (HTTPError, URLError, OSError, TimeoutError, ValueError) as exc:
+            return {
+                "name": self._source_name_from_url(url),
+                "url": url,
+                "status": f"unavailable:{type(exc).__name__}",
+                "text": "",
+            }
+
+    def _html_to_text(self, value: str) -> str:
+        value = re.sub(r"(?is)<(script|style|svg|noscript).*?</\1>", " ", value)
+        value = re.sub(r"(?s)<[^>]+>", " ", value)
+        value = html.unescape(value)
+        value = re.sub(r"\s+", " ", value)
+        return value.strip()
+
+    def _source_name_from_url(self, url: str) -> str:
+        lowered = url.lower()
+        if "jobs.disneycareers.com" in lowered or "disneycareers.com" in lowered:
+            return "Disney Careers role listing"
+        if "imagineer.aolabs.io/proof-packet" in lowered:
+            return "WDI proof packet"
+        if "sarrus.aolabs.io" in lowered:
+            return "Sarrus portfolio"
+        if "fluxcell.aolabs.io" in lowered:
+            return "FluxCell portfolio"
+        if "ocean.aolabs.io" in lowered:
+            return "Ocean portfolio"
+        if "la.disneyresearch.com/researchers" in lowered:
+            return "Disney Research roster"
+        if "bipedal-robotic-character" in lowered:
+            return "Disney Research bipedal character paper"
+        if "cv.aolabs.io" in lowered:
+            return "CV artifact"
+        return url
+
+    def _openai_review(
+        self,
+        state: dict[str, Any],
+        ops: dict[str, Any],
+        sources: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        if not os.getenv("OPENAI_API_KEY"):
+            return None
+        try:
+            from openai import OpenAI
+
+            source_payload = [
+                {
+                    "name": source["name"],
+                    "url": source.get("url", ""),
+                    "status": source["status"],
+                    "text": source.get("text", "")[:4200],
+                }
+                for source in sources
+            ]
+            prompt = {
+                "review_goal": "Autonomously critique Alan Pham's WDI R&D Imagineering proof packet and portfolio fit.",
+                "target": state["target"],
+                "positioning": state["positioning"],
+                "current_ops": ops,
+                "guardrails": state["guardrails"],
+                "sources": source_payload,
+            }
+            client = OpenAI(timeout=20)
+            response = client.chat.completions.create(
+                model=self._openai_model(),
+                response_format={"type": "json_object"},
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are an evidence-only autonomous reviewer for a WDI R&D mechanical Imagineering target. "
+                            "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
+                            "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
+                            "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
+                            "next_actions must be an array of objects with title, body, expected_signal, and source."
+                        ),
+                    },
+                    {"role": "user", "content": json.dumps(prompt, ensure_ascii=True)},
+                ],
+            )
+            raw = response.choices[0].message.content or "{}"
+            return self._normalize_review(json.loads(raw))
+        except Exception:
+            return None
+
+    def _normalize_review(self, parsed: dict[str, Any]) -> dict[str, Any]:
+        next_actions = []
+        for item in parsed.get("next_actions") or []:
+            if not isinstance(item, dict):
+                continue
+            next_actions.append(
+                {
+                    "title": str(item.get("title") or "Improve one proof artifact.")[:140],
+                    "body": str(item.get("body") or "")[:700],
+                    "expected_signal": str(item.get("expected_signal") or "")[:260],
+                    "source": str(item.get("source") or "")[:220],
+                }
+            )
+            if len(next_actions) >= 5:
+                break
+
+        return {
+            "verdict": str(parsed.get("verdict") or "Review completed; packet needs sharper evidence.")[:220],
+            "score": max(0, min(int(parsed.get("score") or 0), 100)),
+            "top_issue": str(parsed.get("top_issue") or "The packet needs one concrete proof point.")[:260],
+            "why_it_matters": str(parsed.get("why_it_matters") or "")[:800],
+            "best_existing_evidence": self._string_list(parsed.get("best_existing_evidence"), 5, 220),
+            "evidence_gaps": self._string_list(parsed.get("evidence_gaps"), 6, 260),
+            "next_actions": next_actions,
+            "packet_edits": self._string_list(parsed.get("packet_edits"), 6, 260),
+            "reviewer_summary": str(parsed.get("reviewer_summary") or "")[:900],
+        }
+
+    def _fallback_review(
+        self,
+        state: dict[str, Any],
+        ops: dict[str, Any],
+        sources: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        source_names = ", ".join(source["name"] for source in sources if source["status"] == "ok")[:500]
+        return {
+            "verdict": "Credible core, not inevitable yet.",
+            "score": max(0, min(int(ops.get("fit_score") or 0), 100)),
+            "top_issue": "The packet still needs one hard mechanical validation artifact that connects directly to a believable human-facing physical experience.",
+            "why_it_matters": (
+                "The WDI R&D role asks for hands-on mechanical design, prototype testing, loads, moments, forces, CAD, "
+                "iteration, and collaboration across creative and technical disciplines. The current packet is aligned, "
+                "but the reviewer-grade proof should make one mechanism impossible to dismiss."
+            ),
+            "best_existing_evidence": [
+                "Sarrus gives the core soft robotics mechanism and physical morphing surface proof.",
+                "FluxCell gives a concrete actuation route for moving beyond tethered pneumatic demos.",
+                "The proof packet already targets WDI R&D language instead of a generic academic robotics framing.",
+            ],
+            "evidence_gaps": [
+                "One compact force/load/travel/stiffness calculation tied to the mechanism.",
+                "One visual before/after prototype iteration that shows testing changed the design.",
+                "One 60-90 second demo or storyboard showing what a guest would see, feel, or believe.",
+                "One explicit SolidWorks/GD&T/manufacturing detail for mechanical design credibility.",
+            ],
+            "next_actions": [
+                {
+                    "title": "Add one reviewer-proof mechanical figure.",
+                    "body": "Create a single figure or packet block with Sarrus cell travel, load path, estimated force or stiffness, prototype material/process, and what changed after testing.",
+                    "expected_signal": "Mechanical reviewer can see loads, motion, fabrication, and iteration without asking for missing basics.",
+                    "source": source_names or "Live Imagineer state",
+                },
+                {
+                    "title": "Add one guest-facing demo frame.",
+                    "body": "Pair the mechanical figure with one storyboard frame: what the mechanism makes an object do, and why that motion would feel alive, responsive, or surprising.",
+                    "expected_signal": "The work reads as WDI physical experience R&D, not only soft robotics research.",
+                    "source": "Proof packet and portfolio sources",
+                },
+            ],
+            "packet_edits": [
+                "Replace the human review ask with an autonomous AI review contract.",
+                "Add a compact validation block: mechanism, measurement, failure, design change, next proof.",
+                "Add one role-fit line that names CAD, loads/forces, prototype fabrication, and test iteration.",
+            ],
+            "reviewer_summary": (
+                "Autonomous fallback review used available live state and public sources. The next compounding move is a "
+                "single mechanical validation artifact, not more positioning text."
+            ),
+        }
+
+    def _string_list(self, value: Any, limit: int, max_chars: int) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        items: list[str] = []
+        for item in value:
+            text = str(item).strip()
+            if text:
+                items.append(text[:max_chars])
+            if len(items) >= limit:
+                break
+        return items
 
     def _load_state(self) -> dict[str, Any]:
         if not self.state_path.exists():
@@ -508,7 +873,7 @@ class ImagineerSystem:
         merged = copy.deepcopy(DEFAULT_STATE)
         for key, value in state.items():
             merged[key] = value
-        for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "journal", "weekly_papers"):
+        for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "reviews", "journal", "weekly_papers"):
             merged.setdefault(list_key, copy.deepcopy(DEFAULT_STATE[list_key]))
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
@@ -595,16 +960,21 @@ class ImagineerSystem:
             scored.append(
                 {
                     "key": key,
-                    "label": dimension["label"],
+                    "label": self._dimension_label(key, dimension["label"]),
                     "score": score,
                     "gap": max(0, 100 - score),
-                    "target_signal": dimension["target_signal"],
+                    "target_signal": self._dimension_target_signal(key, dimension["target_signal"]),
                     "next_signal": self._signal_action_for_dimension(key),
                 }
             )
         return scored
 
     def _active_experiment(self, state: dict[str, Any]) -> dict[str, Any]:
+        active_id = state.get("active_experiment_id")
+        if active_id:
+            selected = next((item for item in state["experiments"] if item.get("id") == active_id), None)
+            if selected:
+                return selected
         return next((item for item in state["experiments"] if item.get("status") == "active"), state["experiments"][0])
 
     def _experiment_view(self, experiment: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
@@ -614,13 +984,16 @@ class ImagineerSystem:
         reviewer_ready = sum(1 for event in state["events"] if "reviewer_ready" in event.get("tags", []))
         reviewer_ready += sum(1 for item in state["portfolio"] if "reviewer_ready" in item.get("tags", []))
         warm_review = sum(1 for event in state["events"] if "warm_review" in event.get("tags", []))
+        ai_reviews = len(state.get("reviews", []))
         progress = {
             "proof_logs": proof_count,
             "daily_cycles": cycle_count,
             "reviewer_ready_artifacts": reviewer_ready,
+            "ai_reviews": ai_reviews,
             "warm_review_requests": warm_review,
             "target_proof_logs": 5,
             "target_reviewer_ready_artifacts": 1,
+            "target_ai_reviews": 1,
             "target_warm_review_requests": 1,
         }
         return {**experiment, "started_at": start, "progress": progress}
@@ -653,9 +1026,9 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Create one real review path.",
-                "body": "Identify one WDI-adjacent engineer, designer, roboticist, professor, or creative technologist and draft a specific review ask around one artifact.",
-                "why": "The principal north star requires trust, leadership signal, and relationships, not only private output.",
+                "title": "Run the autonomous AI reviewer.",
+                "body": "Pull current role, packet, portfolio, and Disney Research context into the AI reviewer, then route the top critique into one proof-packet or portfolio improvement.",
+                "why": "The principal north star needs rigorous external-style critique, but the first review loop can be autonomous and repeatable before any human outreach.",
             },
             "application_packet": {
                 "lane": key,
@@ -726,11 +1099,23 @@ class ImagineerSystem:
             "mechanical_depth": "Add one trustworthy mechanical calculation or CAD/manufacturing detail.",
             "creative_prototyping": "Make one prototype iteration visible as a clean artifact.",
             "physical_experience": "Tie one technical result to a felt human experience.",
-            "leadership_network": "Create one real review or relationship path.",
+            "leadership_network": "Run autonomous critique first; use human review only as an approved escalation.",
             "application_packet": "Make one role-specific portfolio item sharper.",
             "paper_system": "Log state, action, intervention, and result for the methods trail.",
         }
         return signals.get(key, "Advance one verified signal.")
+
+    def _dimension_label(self, key: str, fallback: str) -> str:
+        labels = {
+            "leadership_network": "Review intelligence",
+        }
+        return labels.get(key, fallback)
+
+    def _dimension_target_signal(self, key: str, fallback: str) -> str:
+        signals = {
+            "leadership_network": "Repeatable critique, role calibration, source coverage, and optional approved human escalation.",
+        }
+        return signals.get(key, fallback)
 
     def _confidence_label(self, fit_score: int) -> str:
         if fit_score >= 80:
