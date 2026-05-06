@@ -1167,9 +1167,11 @@ class ImagineerSystem:
             for item in state["portfolio"]
             for tag in item.get("tags", [])
         ]
+        ai_review_count = len(state.get("reviews", []))
         scored: list[dict[str, Any]] = []
         for dimension in state["dimensions"]:
             key = dimension["key"]
+            calibration = self._dimension_calibration(key)
             event_points = sum(
                 int(event.get("impact") or 1)
                 for event in events
@@ -1178,9 +1180,19 @@ class ImagineerSystem:
             portfolio_points = portfolio_tags.count(key)
             daily_points = sum(1 for event in events if event.get("kind") == "daily_cycle" and key in event.get("tags", []))
             base_score = int(dimension["score"])
-            event_score = event_points * 4
-            portfolio_score = portfolio_points * 2
-            score = min(100, base_score + event_score + portfolio_score + daily_points)
+            event_score = min(
+                int(round(event_points * calibration["event_weight"])),
+                calibration["event_cap"],
+            )
+            portfolio_score = min(
+                portfolio_points * calibration["portfolio_weight"],
+                calibration["portfolio_cap"],
+            )
+            daily_score = min(daily_points, calibration["daily_cap"])
+            loop_score = self._dimension_loop_bonus(key, ai_review_count)
+            ceiling = calibration["ceiling"]
+            raw_score = base_score + event_score + portfolio_score + daily_score + loop_score
+            score = min(ceiling, raw_score)
             scored.append(
                 {
                     "key": key,
@@ -1190,12 +1202,91 @@ class ImagineerSystem:
                     "target_signal": self._dimension_target_signal(key, dimension["target_signal"]),
                     "next_signal": self._signal_action_for_dimension(key),
                     "score_basis": (
-                        f"Base {base_score}; +{event_score} from logged event impact; "
-                        f"+{portfolio_score} from portfolio evidence tags; +{daily_points} from daily-cycle evidence; capped at 100."
+                        f"Base {base_score}; +{event_score} calibrated event bonus from {event_points} raw logged-impact points; "
+                        f"+{portfolio_score} portfolio bonus; +{daily_score} daily-cycle bonus; "
+                        f"+{loop_score} reviewer-loop bonus; readiness ceiling {ceiling} because {calibration['ceiling_reason']} "
+                        "A score of 100 is reserved for no known blocker, not just accumulated activity."
                     ),
                 }
             )
         return scored
+
+    def _dimension_calibration(self, key: str) -> dict[str, Any]:
+        calibrations: dict[str, dict[str, Any]] = {
+            "mechanical_depth": {
+                "event_weight": 0.30,
+                "event_cap": 8,
+                "portfolio_weight": 2,
+                "portfolio_cap": 4,
+                "daily_cap": 1,
+                "ceiling": 86,
+                "ceiling_reason": "raw digitized curves, uncertainty, and reviewer-grade test conditions are still missing.",
+            },
+            "creative_prototyping": {
+                "event_weight": 0.25,
+                "event_cap": 4,
+                "portfolio_weight": 2,
+                "portfolio_cap": 4,
+                "daily_cap": 1,
+                "ceiling": 84,
+                "ceiling_reason": "the public proof still needs a tighter visible prototype-iteration story.",
+            },
+            "physical_experience": {
+                "event_weight": 0.70,
+                "event_cap": 10,
+                "portfolio_weight": 2,
+                "portfolio_cap": 4,
+                "daily_cap": 1,
+                "ceiling": 82,
+                "ceiling_reason": "show value is visible, but the packet still needs a concise guest-facing demo sequence.",
+            },
+            "leadership_network": {
+                "event_weight": 0.20,
+                "event_cap": 3,
+                "portfolio_weight": 1,
+                "portfolio_cap": 2,
+                "daily_cap": 1,
+                "ceiling": 58,
+                "ceiling_reason": "the reviewer loop works, but principal-level human review, source coverage, and leadership evidence remain weak.",
+            },
+            "application_packet": {
+                "event_weight": 0.50,
+                "event_cap": 22,
+                "portfolio_weight": 2,
+                "portfolio_cap": 4,
+                "daily_cap": 1,
+                "ceiling": 76,
+                "ceiling_reason": "the packet is credible for the active rung, but a demo reel, final CV bullets, and principal-scope evidence are still open.",
+            },
+            "paper_system": {
+                "event_weight": 0.45,
+                "event_cap": 20,
+                "portfolio_weight": 2,
+                "portfolio_cap": 2,
+                "daily_cap": 1,
+                "ceiling": 74,
+                "ceiling_reason": "the autonomous loop is early and still needs scheduled runs, stronger evaluations, and longer outcome history.",
+            },
+        }
+        return calibrations.get(
+            key,
+            {
+                "event_weight": 0.25,
+                "event_cap": 5,
+                "portfolio_weight": 1,
+                "portfolio_cap": 2,
+                "daily_cap": 1,
+                "ceiling": 75,
+                "ceiling_reason": "the lane has unresolved evidence gaps.",
+            },
+        )
+
+    def _dimension_loop_bonus(self, key: str, ai_review_count: int) -> int:
+        if key == "leadership_network":
+            return min(ai_review_count * 2, 20)
+        if key == "paper_system":
+            return min(ai_review_count, 8)
+        return 0
 
     def _active_experiment(self, state: dict[str, Any]) -> dict[str, Any]:
         active_id = state.get("active_experiment_id")
@@ -1320,12 +1411,12 @@ class ImagineerSystem:
 
     def _signal_action_for_dimension(self, key: str) -> str:
         signals = {
-            "mechanical_depth": "Add one trustworthy mechanical calculation or CAD/manufacturing detail.",
-            "creative_prototyping": "Make one prototype iteration visible as a clean artifact.",
-            "physical_experience": "Tie one technical result to a felt human experience.",
-            "leadership_network": "Run autonomous critique first; use human review only as an approved escalation.",
-            "application_packet": "Make one role-specific portfolio item sharper.",
-            "paper_system": "Log state, action, intervention, and result for the methods trail.",
+            "mechanical_depth": "Digitize the Sarrus force, stiffness, and hysteresis curves with uncertainty and test conditions.",
+            "creative_prototyping": "Make one prototype iteration visible as a before/after artifact.",
+            "physical_experience": "Turn the Sarrus object-manipulation clip into a concise guest-facing motion sequence.",
+            "leadership_network": "Improve reviewer source coverage and prepare human-review evidence, but ask before any outreach.",
+            "application_packet": "Add the final active-rung packet pieces: demo reel, CV bullets, and role-specific narrative.",
+            "paper_system": "Add scheduled runs, evaluation history, and outcome tracking so the loop proves persistence.",
         }
         return signals.get(key, "Advance one verified signal.")
 
