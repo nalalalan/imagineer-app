@@ -1,6 +1,7 @@
 const railwayApiBase = "https://imagineer-app-production.up.railway.app";
 const sameOriginApiHosts = new Set(["localhost", "127.0.0.1", "imagineer-app-production.up.railway.app"]);
 const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.location.hostname) ? "" : railwayApiBase);
+const paperName = "A proof-governed autonomy system for career conversion in embodied creative research and development";
 
 const fallbackOps = {
   status: "static_fallback",
@@ -37,7 +38,6 @@ const fallbackOps = {
   weekly_paper: {
     week_id: "not loaded",
     status: "fallback",
-    headline_result: "Waiting for live backend.",
     updated_at: new Date().toISOString()
   },
   dimensions: [],
@@ -51,17 +51,13 @@ function setText(selector, value) {
   if (node) node.textContent = value ?? "--";
 }
 
-async function request(path, options = {}) {
+async function request(path) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 8000);
   try {
     const response = await fetch(`${apiBase}${path}`, {
       cache: "no-store",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {})
-      },
+      headers: { "Content-Type": "application/json" },
       signal: controller.signal
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -81,46 +77,29 @@ async function loadState() {
   }
 }
 
-async function updatePaper() {
-  const button = $("#update-paper");
-  button.disabled = true;
-  button.textContent = "Updating";
-  try {
-    const result = await request("/api/imagineer/weekly-paper/run", { method: "POST", body: "{}" });
-    render(result.ops, true);
-  } catch {
-    render(fallbackOps, false);
-  } finally {
-    button.disabled = false;
-    button.textContent = "Update paper";
-  }
-}
-
 function render(ops, connected) {
   const evidence = ops.evidence || {};
   const bottleneck = ops.current_bottleneck || {};
   const experiment = ops.active_experiment || {};
   const paper = ops.weekly_paper || {};
   const action = ops.next_action || {};
+  const target = ops.target || {};
 
   setText("#backend-state", connected ? "online" : "fallback");
   $("#backend-state").className = connected ? "is-ok" : "is-warn";
-  setText("#backend-detail", connected ? "live Railway API" : "static fallback");
+  setText("#backend-detail", connected ? clean(ops.status) : "static fallback");
   setText("#fit-score", Number.isFinite(ops.fit_score) ? ops.fit_score : "--");
   setText("#confidence", clean(ops.confidence));
+  setText("#subtitle", ops.positioning || "Mechanical research, creative prototyping, and human-facing physical experiences.");
+  setText("#target-role", target.north_star_title || "Principal R&D Imagineer - Mechanical Engineer");
+  setText("#target-location", `${target.company || "Walt Disney Imagineering R&D"} / ${target.location || "Glendale, California"}`);
   setText("#bottleneck", bottleneck.label || "--");
   setText("#bottleneck-detail", bottleneck.target_signal || "--");
-  setText("#paper-week", paper.week_id || "--");
-  setText("#paper-status", clean(paper.status));
-  setText("#subtitle", `${ops.target?.active_rung_title || "WDI R&D mechanical role"} / ${ops.target?.location || "Glendale"}`);
-  setText("#loop-title", experiment.name || "No active experiment");
-  setText("#loop-state", clean(experiment.status || ops.status));
-  setText("#loop-body", experiment.hypothesis || "--");
-  setText("#system-job", "Watch the live role-fit state, update the paper, and surface the next constraint without fake progress.");
+  setText("#experiment-name", experiment.name || "No active experiment");
+  setText("#experiment-status", clean(experiment.status || ops.status));
   setText("#action-title", action.title || "--");
   setText("#action-body", action.body || "--");
-  setText("#paper-title", paper.title || "Weekly progress paper");
-  setText("#paper-result", paper.headline_result || "--");
+  setText("#paper-name", paperName);
   setText("#metric-proof", evidence.proof_events ?? "--");
   setText("#metric-cycles", evidence.daily_cycles ?? "--");
   setText("#metric-reviewer", evidence.reviewer_ready_artifacts ?? "--");
@@ -146,7 +125,7 @@ function renderDimensions(dimensions) {
 }
 
 function renderJournal(journal) {
-  $("#journal").innerHTML = journal.slice(0, 5).map((item) => `
+  $("#journal").innerHTML = journal.slice(0, 3).map((item) => `
     <div class="journal-item">
       <strong>${escapeHtml(item.title || "Log entry")}</strong>
       <span>${escapeHtml(item.body || "")}</span>
@@ -179,5 +158,4 @@ function escapeHtml(value) {
 }
 
 $("#refresh").addEventListener("click", loadState);
-$("#update-paper").addEventListener("click", updatePaper);
 loadState();

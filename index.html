@@ -9,114 +9,106 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="AO Labs">
   <meta property="og:title" content="Imagineer State / AO Labs">
-  <meta property="og:description" content="State, metrics, bottleneck, weekly paper, and next action.">
+  <meta property="og:description" content="Live state, bottleneck, next action, and paper PDF.">
   <meta property="og:url" content="https://imagineer.aolabs.io/">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="wrap">
+  <main class="shell">
     <header class="topbar">
-      <a href="https://aolabs.io" class="brand" aria-label="AO Labs"><img src="./favicon.svg" alt=""></a>
-      <div class="top-actions">
+      <a href="https://aolabs.io" class="brand" aria-label="AO Labs">
+        <img src="./favicon.svg" alt="">
+        <span>Imagineer</span>
+      </a>
+      <div class="actions">
         <button id="refresh" type="button">Refresh</button>
-        <button id="update-paper" type="button">Update paper</button>
-        <a class="button-link" href="./imagineer-autonomous-position-system.pdf">Paper PDF</a>
+        <a class="button-link" href="./imagineer-autonomous-position-system.pdf">PDF</a>
       </div>
     </header>
 
-    <section class="hero">
-      <div>
-        <p class="eyebrow">Imagineer Live</p>
-        <h1>WDI R&amp;D state dashboard</h1>
-        <p id="subtitle" class="subtitle">Checking the live backend before saying anything.</p>
-      </div>
-      <aside class="operator-card">
-        <p class="label">You step in</p>
-        <h2>Only for applications, sensitive outreach, or real human judgment.</h2>
-      </aside>
-    </section>
-
-    <section class="status-row" aria-label="Current status">
-      <article>
-        <p class="label">Backend</p>
-        <strong id="backend-state">checking</strong>
-        <span id="backend-detail">--</span>
-      </article>
-      <article>
-        <p class="label">Fit score</p>
-        <strong id="fit-score">--</strong>
-        <span id="confidence">--</span>
-      </article>
-      <article>
-        <p class="label">Bottleneck</p>
-        <strong id="bottleneck">--</strong>
-        <span id="bottleneck-detail">--</span>
-      </article>
-      <article>
-        <p class="label">Paper</p>
-        <strong id="paper-week">--</strong>
-        <span id="paper-status">--</span>
-      </article>
-    </section>
-
-    <section class="grid">
-      <section class="panel primary">
-        <div class="panel-head">
-          <div>
-            <p class="label">Current loop</p>
-            <h2 id="loop-title">Reading system</h2>
-          </div>
-          <span id="loop-state" class="pill">checking</span>
-        </div>
-        <p id="loop-body">Waiting for the backend response.</p>
-        <div class="rule">
-          <p class="label">System job</p>
-          <p id="system-job">Build truthful proof, update the paper, and surface the next constraint.</p>
-        </div>
-      </section>
-
-      <section class="panel">
-        <p class="label">Counters</p>
-        <div class="metrics">
-          <div><strong id="metric-proof">--</strong><span>proof logs</span></div>
-          <div><strong id="metric-cycles">--</strong><span>daily cycles</span></div>
-          <div><strong id="metric-reviewer">--</strong><span>reviewer-ready</span></div>
-          <div><strong id="metric-journal">--</strong><span>journal entries</span></div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <p class="label">Next action</p>
-        <h2 id="action-title">--</h2>
-        <p id="action-body">--</p>
-      </section>
-
-      <section class="panel">
-        <p class="label">Weekly paper</p>
-        <h2 id="paper-title">--</h2>
-        <p id="paper-result">--</p>
-        <div class="link-row">
-          <a href="./imagineer-autonomous-position-system.pdf">Open PDF</a>
-          <a href="https://imagineer-app-production.up.railway.app/api/imagineer/weekly-paper">Raw paper</a>
-        </div>
-      </section>
-    </section>
-
-    <section class="panel full">
-      <div class="panel-head">
+    <section class="dashboard" aria-label="Imagineer state dashboard">
+      <div class="dashboard-head">
         <div>
-          <p class="label">Role-fit signals</p>
-          <h2>What the system is measuring</h2>
+          <p class="kicker">WDI R&amp;D / Glendale</p>
+          <h1>Imagineer state</h1>
+          <p id="subtitle" class="subtitle">Checking the live system.</p>
         </div>
-        <span id="updated-at" class="pill">not loaded yet</span>
+        <div class="score-box" aria-label="Fit score">
+          <span>Fit</span>
+          <strong id="fit-score">--</strong>
+          <small id="confidence">--</small>
+        </div>
       </div>
-      <div id="dimensions" class="dimensions"></div>
-    </section>
 
-    <section class="panel full">
-      <p class="label">Recent log</p>
-      <div id="journal" class="journal"></div>
+      <div class="state-list">
+        <div class="state-row">
+          <span>System</span>
+          <strong id="backend-state">checking</strong>
+          <em id="backend-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Target</span>
+          <strong id="target-role">Principal R&amp;D Imagineer - Mechanical Engineer</strong>
+          <em id="target-location">Walt Disney Imagineering R&amp;D / Glendale</em>
+        </div>
+        <div class="state-row">
+          <span>Bottleneck</span>
+          <strong id="bottleneck">--</strong>
+          <em id="bottleneck-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Experiment</span>
+          <strong id="experiment-name">--</strong>
+          <em id="experiment-status">--</em>
+        </div>
+        <div class="state-row">
+          <span>Next action</span>
+          <strong id="action-title">--</strong>
+          <em id="action-body">--</em>
+        </div>
+        <div class="state-row paper-row">
+          <span>Paper</span>
+          <strong id="paper-name">A proof-governed autonomy system for career conversion in embodied creative research and development</strong>
+          <a href="./imagineer-autonomous-position-system.pdf">Open PDF</a>
+        </div>
+      </div>
+
+      <dl class="metrics" aria-label="Evidence counters">
+        <div>
+          <dt>Proof logs</dt>
+          <dd id="metric-proof">--</dd>
+        </div>
+        <div>
+          <dt>Daily cycles</dt>
+          <dd id="metric-cycles">--</dd>
+        </div>
+        <div>
+          <dt>Reviewer ready</dt>
+          <dd id="metric-reviewer">--</dd>
+        </div>
+        <div>
+          <dt>Journal</dt>
+          <dd id="metric-journal">--</dd>
+        </div>
+      </dl>
+
+      <div class="lower">
+        <section class="signals" aria-labelledby="signals-title">
+          <div class="section-head">
+            <h2 id="signals-title">Role-fit signals</h2>
+            <span id="updated-at">not loaded</span>
+          </div>
+          <div id="dimensions" class="dimensions"></div>
+        </section>
+
+        <section class="log" aria-labelledby="log-title">
+          <div class="section-head">
+            <h2 id="log-title">Recent log</h2>
+          </div>
+          <div id="journal" class="journal"></div>
+        </section>
+      </div>
     </section>
   </main>
 
