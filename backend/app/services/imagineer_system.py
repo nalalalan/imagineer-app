@@ -972,13 +972,13 @@ class ImagineerSystem:
             title = str(item.get("title") or "").strip()
             body = str(item.get("body") or "").strip()
             if source and evidence:
-                return self._clean_inline_text(f"{source}: {evidence}")
+                return self._label_detail(source, evidence)
             if gap and detail:
-                return self._clean_inline_text(f"{gap}: {detail}")
+                return self._label_detail(gap, detail)
             if gap:
                 return self._clean_inline_text(gap)
             if section and edit:
-                return self._clean_inline_text(f"{section}: {edit}")
+                return self._label_detail(section, edit)
             if title and body:
                 return self._clean_inline_text(f"{title}: {body}")
             if edit:
@@ -986,7 +986,47 @@ class ImagineerSystem:
             if evidence:
                 return self._clean_inline_text(evidence)
             return self._clean_inline_text(json.dumps(item, ensure_ascii=True, sort_keys=True))
-        return self._clean_inline_text(str(item or ""))
+        text = self._clean_inline_text(str(item or ""))
+        if text.startswith("{") and ":" in text:
+            legacy = self._legacy_review_item_text(text)
+            if legacy:
+                return legacy
+        return text
+
+    def _legacy_review_item_text(self, text: str) -> str:
+        source = self._legacy_review_value(text, "source")
+        evidence = self._legacy_review_value(text, "evidence")
+        gap = self._legacy_review_value(text, "gap")
+        detail = self._legacy_review_value(text, "detail")
+        section = self._legacy_review_value(text, "section")
+        edit = self._legacy_review_value(text, "edit")
+        if source and evidence:
+            return self._label_detail(source, evidence)
+        if gap and detail:
+            return self._label_detail(gap, detail)
+        if gap:
+            return self._clean_inline_text(gap)
+        if section and edit:
+            return self._label_detail(section, edit)
+        if edit:
+            return self._clean_inline_text(edit)
+        return ""
+
+    def _legacy_review_value(self, text: str, key: str) -> str:
+        match = re.search(rf"['\"]{re.escape(key)}['\"]\s*:\s*(['\"])", text)
+        if not match:
+            return ""
+        quote = match.group(1)
+        start = match.end()
+        rest = text[start:]
+        next_field = re.search(rf"{re.escape(quote)}\s*,\s*['\"][A-Za-z_]+['\"]\s*:", rest)
+        value = rest[: next_field.start()] if next_field else rest
+        return self._clean_inline_text(value.strip().rstrip("}").strip().strip("\"'"))
+
+    def _label_detail(self, label: str, detail: str) -> str:
+        clean_label = self._clean_inline_text(label).rstrip(".:;")
+        clean_detail = self._clean_inline_text(detail)
+        return f"{clean_label}: {clean_detail}"
 
     def _review_display_text(self, primary: Any, fallback: Any, default: str) -> str:
         text = self._clean_inline_text(str(primary or ""))
