@@ -1,15 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Imagineer icon">
-  <rect width="128" height="128" rx="26" fill="#0c0d12"/>
-  <style>
-    .w { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 950; fill: #f7f5ef; }
-    .r { font-family: Inter, Arial, Helvetica, sans-serif; font-weight: 950; fill: #d76d86; }
-  </style>
-  <path d="M38 38v52" fill="none" stroke="#f7f5ef" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="38" cy="24" r="7" fill="#f7f5ef"/>
-  <path d="M58 25 58 103" fill="none" stroke="#687080" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M76 44c13 0 24 9 24 20S89 84 76 84" fill="none" stroke="#f7f5ef" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M77 84 100 106" fill="none" stroke="#f7f5ef" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="76" cy="44" r="5" fill="#6f8cff"/>
-  <circle cx="100" cy="64" r="5" fill="#6f8cff"/>
-  <circle cx="76" cy="84" r="5" fill="#6f8cff"/>
+  <defs>
+    <radialGradient id="glass" cx="72%" cy="16%" r="86%">
+      <stop offset="0" stop-color="#252936"/>
+      <stop offset="0.45" stop-color="#11131b"/>
+      <stop offset="1" stop-color="#05060a"/>
+    </radialGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff9ed"/>
+      <stop offset="0.48" stop-color="#f4efe7"/>
+      <stop offset="1" stop-color="#aeb4c3"/>
+    </linearGradient>
+    <linearGradient id="roseGold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d84f70"/>
+      <stop offset="0.48" stop-color="#f1a36f"/>
+      <stop offset="1" stop-color="#f2cc70"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#glass)"/>
+  <path d="M38 38v52" fill="none" stroke="url(#metal)" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="38" cy="24" r="7" fill="url(#metal)"/>
+  <path d="M58 25v78" fill="none" stroke="#626a7a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M76 44c13 0 24 9 24 20S89 84 76 84" fill="none" stroke="url(#metal)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M77 84 100 106" fill="none" stroke="url(#metal)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="76" cy="44" r="5" fill="#7e97ff"/>
+  <circle cx="100" cy="64" r="5" fill="#7e97ff"/>
+  <circle cx="76" cy="84" r="5" fill="#7e97ff"/>
 </svg>
