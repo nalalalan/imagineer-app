@@ -65,6 +65,13 @@ p {
   font-weight: 900;
 }
 
+.brand img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  border-radius: var(--radius);
+}
+
 .top-actions,
 .link-row {
   display: flex;
