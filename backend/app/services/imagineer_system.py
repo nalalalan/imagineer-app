@@ -210,6 +210,7 @@ class ImagineerSystem:
             "system_health": {
                 "state_path": str(self.state_path),
                 "openai_planner": bool(os.getenv("OPENAI_API_KEY")),
+                "openai_model": self._openai_model() if os.getenv("OPENAI_API_KEY") else None,
                 "storage": "json_runtime_state",
                 "write_surface": "events_only",
             },
@@ -666,7 +667,7 @@ class ImagineerSystem:
         try:
             from openai import OpenAI
 
-            model = os.getenv("IMAGINEER_OPENAI_MODEL", "gpt-4.1-mini")
+            model = self._openai_model()
             client = OpenAI(timeout=8)
             prompt = {
                 "target": state["target"],
@@ -705,6 +706,9 @@ class ImagineerSystem:
                 "body": self._signal_action_for_dimension(weakest["key"]),
                 "why": f"OpenAI planner unavailable, so the guardrailed local policy selected the weakest role-fit signal. Planner error: {type(exc).__name__}.",
             }
+
+    def _openai_model(self) -> str:
+        return os.getenv("IMAGINEER_OPENAI_MODEL", "gpt-5.5").strip() or "gpt-5.5"
 
     def _signal_action_for_dimension(self, key: str) -> str:
         signals = {
