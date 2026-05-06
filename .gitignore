@@ -1,0 +1,8 @@
+.runtime/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+*.log
+screenshots/
+*.tmp
