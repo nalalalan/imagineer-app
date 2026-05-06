@@ -60,6 +60,7 @@ DEFAULT_STATE: dict[str, Any] = {
             "https://cv.aolabs.io",
             "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf",
             "https://sarrus.aolabs.io",
+            "https://sarrus.aolabs.io/mechanism.html",
             "https://fluxcell.aolabs.io",
             "https://relay.aolabs.io",
             "https://ocean.aolabs.io",
