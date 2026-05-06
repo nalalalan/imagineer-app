@@ -174,6 +174,8 @@ class ImagineerSystem:
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
+        reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
+        reviewer_ready_portfolio = [item for item in state["portfolio"] if "reviewer_ready" in item.get("tags", [])]
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
 
         return {
@@ -192,6 +194,7 @@ class ImagineerSystem:
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
                 "portfolio_items": len(state["portfolio"]),
+                "reviewer_ready_artifacts": len(reviewer_ready_events) + len(reviewer_ready_portfolio),
                 "journal_entries": len(state["journal"]),
             },
             "portfolio": state["portfolio"],
@@ -199,6 +202,11 @@ class ImagineerSystem:
             "guardrails": state["guardrails"],
             "paper": self.paper_outline(compact=True),
             "weekly_paper": self.weekly_paper(compact=True),
+            "artifacts": {
+                "paper_pdf": "https://aolabs.io/imagineer/imagineer-autonomous-position-system.pdf",
+                "paper_pdf_custom_domain": "https://imagineer.aolabs.io/imagineer-autonomous-position-system.pdf",
+                "live_backend": "https://imagineer-app-production.up.railway.app/api/imagineer/ops-check",
+            },
             "system_health": {
                 "state_path": str(self.state_path),
                 "openai_planner": bool(os.getenv("OPENAI_API_KEY")),
@@ -254,7 +262,7 @@ class ImagineerSystem:
             },
             {
                 "title": "Evaluation",
-                "claim": "The system tracks proof velocity, reviewer-ready artifacts, outreach quality, application readiness, and conversion milestones.",
+                "claim": "The system tracks proof velocity, reviewer-ready artifacts, review paths, application readiness, and conversion milestones.",
             },
             {
                 "title": "Guardrails",
@@ -391,7 +399,8 @@ class ImagineerSystem:
                 "heading": "Weekly Results",
                 "body": (
                     f"This week has {len(recent_events)} logged events, {ops['evidence']['proof_events']} total proof logs, "
-                    f"{ops['evidence']['daily_cycles']} daily cycles, and {ops['evidence']['portfolio_items']} portfolio anchors. "
+                    f"{ops['evidence']['daily_cycles']} daily cycles, {ops['evidence']['reviewer_ready_artifacts']} reviewer-ready artifacts, "
+                    f"and {ops['evidence']['portfolio_items']} portfolio anchors. "
                     f"{headline}."
                 ),
             },
@@ -441,6 +450,8 @@ class ImagineerSystem:
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
+        reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
+        reviewer_ready_portfolio = [item for item in state["portfolio"] if "reviewer_ready" in item.get("tags", [])]
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
         return {
             "target": state["target"],
@@ -455,6 +466,7 @@ class ImagineerSystem:
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
                 "portfolio_items": len(state["portfolio"]),
+                "reviewer_ready_artifacts": len(reviewer_ready_events) + len(reviewer_ready_portfolio),
                 "journal_entries": len(state["journal"]),
             },
         }
@@ -486,7 +498,19 @@ class ImagineerSystem:
             merged[key] = value
         for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "journal", "weekly_papers"):
             merged.setdefault(list_key, copy.deepcopy(DEFAULT_STATE[list_key]))
+        self._merge_list_by_key(merged, "portfolio", "name")
+        self._merge_list_by_key(merged, "experiments", "id")
         return merged
+
+    def _merge_list_by_key(self, state: dict[str, Any], list_key: str, item_key: str) -> None:
+        existing_values = {
+            item.get(item_key)
+            for item in state.get(list_key, [])
+            if isinstance(item, dict)
+        }
+        for item in DEFAULT_STATE[list_key]:
+            if item.get(item_key) not in existing_values:
+                state[list_key].append(copy.deepcopy(item))
 
     def _week_id(self) -> str:
         year, week, _ = datetime.now(timezone.utc).isocalendar()
@@ -576,6 +600,7 @@ class ImagineerSystem:
         proof_count = sum(1 for event in state["events"] if event.get("kind") == "proof")
         cycle_count = sum(1 for event in state["events"] if event.get("kind") == "daily_cycle")
         reviewer_ready = sum(1 for event in state["events"] if "reviewer_ready" in event.get("tags", []))
+        reviewer_ready += sum(1 for item in state["portfolio"] if "reviewer_ready" in item.get("tags", []))
         warm_review = sum(1 for event in state["events"] if "warm_review" in event.get("tags", []))
         progress = {
             "proof_logs": proof_count,

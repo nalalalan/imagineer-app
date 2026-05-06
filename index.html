@@ -3,174 +3,119 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Imagineer Position System / AO Labs</title>
-  <meta name="description" content="Alan Pham's adaptive system for becoming a WDI R&D Imagineer.">
+  <title>Imagineer State / AO Labs</title>
+  <meta name="description" content="Live state dashboard for Alan Pham's WDI R&D Imagineering system.">
   <link rel="canonical" href="https://imagineer.aolabs.io/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="AO Labs">
-  <meta property="og:title" content="Imagineer Position System / AO Labs">
-  <meta property="og:description" content="Mechanical PhD, soft robotics, creative prototyping, and AI-assisted tools for human-facing physical experiences.">
+  <meta property="og:title" content="Imagineer State / AO Labs">
+  <meta property="og:description" content="State, metrics, bottleneck, weekly paper, and next action.">
   <meta property="og:url" content="https://imagineer.aolabs.io/">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='24' fill='%23f7f8f4'/%3E%3Cpath d='M20 82c12-26 30-39 53-39 14 0 26 5 35 14' fill='none' stroke='%23d65f45' stroke-width='11' stroke-linecap='round'/%3E%3Cpath d='M23 89h82' fill='none' stroke='%2320232a' stroke-width='9' stroke-linecap='round'/%3E%3Cpath d='M37 72c8 0 8-12 16-12s8 12 16 12 8-12 16-12 8 12 16 12' fill='none' stroke='%23098b7d' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar" aria-label="Site header">
-      <a href="https://aolabs.io">AO Labs</a>
-      <span>imagineer.aolabs.io</span>
+  <main class="wrap">
+    <header class="topbar">
+      <a href="https://aolabs.io" class="brand">AO</a>
+      <div class="top-actions">
+        <button id="refresh" type="button">Refresh</button>
+        <button id="update-paper" type="button">Update paper</button>
+        <a class="button-link" href="./imagineer-autonomous-position-system.pdf">Paper PDF</a>
+      </div>
     </header>
 
-    <section class="hero-grid" aria-label="Imagineer target">
-      <div class="target-panel">
-        <p class="eyebrow">autonomous position system</p>
-        <h1>Principal R&amp;D Imagineer is the north star.</h1>
-        <p id="positioning" class="positioning">Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools for human-facing physical experiences.</p>
-        <div class="target-row">
-          <span id="target-company">Walt Disney Imagineering R&amp;D</span>
-          <span id="target-location">Glendale, California</span>
-          <span id="target-rung">WDI R&amp;D mechanical role</span>
-        </div>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Imagineer Live</p>
+        <h1>WDI R&amp;D state dashboard</h1>
+        <p id="subtitle" class="subtitle">Checking the live backend before saying anything.</p>
       </div>
-
-      <aside class="operator-panel" aria-label="Current operating state">
-        <div class="score-ring" aria-label="Role fit score">
-          <span id="fit-score">--</span>
-          <small>fit score</small>
-        </div>
-        <div>
-          <p class="panel-label">current bottleneck</p>
-          <h2 id="bottleneck-title">Loading system state</h2>
-          <p id="bottleneck-body">Checking the latest target profile, evidence, and experiment state.</p>
-        </div>
+      <aside class="operator-card">
+        <p class="label">You step in</p>
+        <h2>Only for applications, sensitive outreach, or real human judgment.</h2>
       </aside>
     </section>
 
-    <section class="metrics" aria-label="System metrics">
+    <section class="status-row" aria-label="Current status">
       <article>
-        <span id="metric-proof">--</span>
-        <p>proof logs</p>
+        <p class="label">Backend</p>
+        <strong id="backend-state">checking</strong>
+        <span id="backend-detail">--</span>
       </article>
       <article>
-        <span id="metric-cycles">--</span>
-        <p>daily cycles</p>
+        <p class="label">Fit score</p>
+        <strong id="fit-score">--</strong>
+        <span id="confidence">--</span>
       </article>
       <article>
-        <span id="metric-portfolio">--</span>
-        <p>portfolio anchors</p>
+        <p class="label">Bottleneck</p>
+        <strong id="bottleneck">--</strong>
+        <span id="bottleneck-detail">--</span>
       </article>
       <article>
-        <span id="metric-journal">--</span>
-        <p>journal entries</p>
+        <p class="label">Paper</p>
+        <strong id="paper-week">--</strong>
+        <span id="paper-status">--</span>
       </article>
     </section>
 
-    <section class="action-grid" aria-label="Next action and active experiment">
-      <article class="next-action">
-        <div class="section-head">
-          <p class="panel-label">next decisive action</p>
-          <button id="run-cycle" type="button">Run daily cycle</button>
+    <section class="grid">
+      <section class="panel primary">
+        <div class="panel-head">
+          <div>
+            <p class="label">Current loop</p>
+            <h2 id="loop-title">Reading system</h2>
+          </div>
+          <span id="loop-state" class="pill">checking</span>
         </div>
-        <h2 id="action-title">Choosing the next move</h2>
-        <p id="action-body">The system chooses the weakest role-fit signal and turns it into one concrete action.</p>
-        <p id="action-why" class="why"></p>
-      </article>
-
-      <article class="experiment">
-        <p class="panel-label">active experiment</p>
-        <h2 id="experiment-title">WDI proof packet v0</h2>
-        <p id="experiment-body">Converting existing soft-robotics work into WDI R&amp;D evidence.</p>
-        <div id="experiment-progress" class="progress-strip"></div>
-      </article>
-    </section>
-
-    <section class="proof-console" aria-label="Evidence logger">
-      <div>
-        <p class="panel-label">evidence logger</p>
-        <h2>Log proof that moves the score.</h2>
-        <p id="logger-state">When the API is connected, this writes to the position-system event log. Offline, it keeps a local note for today.</p>
-      </div>
-      <form id="proof-form" class="proof-form">
-        <label for="proof-kind">signal type</label>
-        <select id="proof-kind">
-          <option value="proof">Prototype proof</option>
-          <option value="portfolio">Portfolio artifact</option>
-          <option value="outreach">Relationship signal</option>
-          <option value="paper">Methods/paper signal</option>
-          <option value="application">Application packet</option>
-        </select>
-
-        <label for="proof-note">signal note</label>
-        <textarea id="proof-note" rows="5" placeholder="Example: Added a force/travel estimate and one-sentence guest-facing explanation to the Sarrus demo page."></textarea>
-
-        <label for="proof-link">evidence link</label>
-        <input id="proof-link" type="url" placeholder="https://...">
-
-        <div class="tag-row" aria-label="Signal tags">
-          <label><input type="checkbox" value="mechanical_depth"> Mechanical</label>
-          <label><input type="checkbox" value="creative_prototyping"> Prototype</label>
-          <label><input type="checkbox" value="physical_experience"> Experience</label>
-          <label><input type="checkbox" value="leadership_network"> Network</label>
-          <label><input type="checkbox" value="application_packet"> Packet</label>
-          <label><input type="checkbox" value="paper_system"> Paper</label>
+        <p id="loop-body">Waiting for the backend response.</p>
+        <div class="rule">
+          <p class="label">System job</p>
+          <p id="system-job">Build truthful proof, update the paper, and surface the next constraint.</p>
         </div>
+      </section>
 
-        <button type="submit">Save signal</button>
-        <p id="save-state" class="save-state" aria-live="polite"></p>
-      </form>
+      <section class="panel">
+        <p class="label">Counters</p>
+        <div class="metrics">
+          <div><strong id="metric-proof">--</strong><span>proof logs</span></div>
+          <div><strong id="metric-cycles">--</strong><span>daily cycles</span></div>
+          <div><strong id="metric-reviewer">--</strong><span>reviewer-ready</span></div>
+          <div><strong id="metric-journal">--</strong><span>journal entries</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <p class="label">Next action</p>
+        <h2 id="action-title">--</h2>
+        <p id="action-body">--</p>
+      </section>
+
+      <section class="panel">
+        <p class="label">Weekly paper</p>
+        <h2 id="paper-title">--</h2>
+        <p id="paper-result">--</p>
+        <div class="link-row">
+          <a href="./imagineer-autonomous-position-system.pdf">Open PDF</a>
+          <a href="https://imagineer-app-production.up.railway.app/api/imagineer/weekly-paper">Raw paper</a>
+        </div>
+      </section>
     </section>
 
-    <section class="dimension-panel" aria-label="Role-fit dimensions">
-      <div class="section-head">
+    <section class="panel full">
+      <div class="panel-head">
         <div>
-          <p class="panel-label">role-fit signals</p>
-          <h2>Close the gaps in public.</h2>
+          <p class="label">Role-fit signals</p>
+          <h2>What the system is measuring</h2>
         </div>
-        <span id="confidence" class="confidence">checking</span>
+        <span id="updated-at" class="pill">not loaded yet</span>
       </div>
       <div id="dimensions" class="dimensions"></div>
     </section>
 
-    <section class="paper-panel" aria-label="Weekly paper and journal">
-      <article class="weekly-paper">
-        <div class="section-head">
-          <div>
-            <p class="panel-label">weekly living paper</p>
-            <h2 id="paper-title">Weekly Progress Paper: Autonomous Imagineer Position System</h2>
-          </div>
-          <button id="update-paper" type="button">Update paper</button>
-        </div>
-        <p id="paper-thesis">A weekly snapshot of the autonomous experiment: state, methods, evidence, bottleneck, intervention, and next move.</p>
-        <div class="paper-meta">
-          <span id="paper-week">week --</span>
-          <span id="paper-status">checking</span>
-          <span id="paper-next">next update --</span>
-        </div>
-        <div id="paper-sections" class="paper-sections"></div>
-      </article>
-      <article>
-        <p class="panel-label">research journal</p>
-        <div id="journal" class="journal"></div>
-      </article>
-    </section>
-
-    <section class="evidence" aria-label="Evidence links">
-      <a href="https://sarrus.aolabs.io">
-        <strong>Sarrus</strong>
-        <span>Programmable soft robotic surfaces and bodies.</span>
-      </a>
-      <a href="https://fluxcell.aolabs.io">
-        <strong>FluxCell</strong>
-        <span>Printed electropermanent actuation for Sarrus cells.</span>
-      </a>
-      <a href="https://ocean.aolabs.io">
-        <strong>Ocean</strong>
-        <span>Creative R&amp;D, WDI, tangible media, and robotics compass.</span>
-      </a>
-      <a href="https://cv.aolabs.io/alan-nguyen-pham-cv.pdf">
-        <strong>CV</strong>
-        <span>Research, engineering, tools, and prototypes.</span>
-      </a>
+    <section class="panel full">
+      <p class="label">Recent log</p>
+      <div id="journal" class="journal"></div>
     </section>
   </main>
 

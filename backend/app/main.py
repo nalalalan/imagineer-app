@@ -110,7 +110,7 @@ def index() -> FileResponse:
 
 @app.get("/{asset_path:path}")
 def static_asset(asset_path: str) -> FileResponse:
-    allowed_suffixes = {".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".ico", ".webmanifest"}
+    allowed_suffixes = {".css", ".js", ".svg", ".png", ".jpg", ".jpeg", ".ico", ".webmanifest", ".html", ".pdf"}
     path = (ROOT_DIR / asset_path).resolve()
     if ROOT_DIR not in path.parents and path != ROOT_DIR:
         raise HTTPException(status_code=404, detail="not found")

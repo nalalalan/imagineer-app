@@ -1,0 +1,200 @@
+\pdfminorversion=7
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[american]{babel}
+\usepackage{csquotes}
+
+\usepackage[
+    style=science,
+    backend=biber,
+    sorting=none,
+    articletitle=true,
+    url=true,
+    doi=false,
+    eprint=false,
+    isbn=false
+]{biblatex}
+\addbibresource{references.bib}
+\AtEveryBibitem{\clearlist{language}}
+
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[margin=0.92in,top=0.82in,bottom=0.95in,headsep=18pt,footskip=24pt]{geometry}
+\usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{needspace}
+\usepackage{etoolbox}
+\usepackage[table]{xcolor}
+
+\definecolor{ClayLine}{HTML}{EEDBDD}
+\definecolor{SumiInk}{HTML}{2D2426}
+\definecolor{DustyTaupe}{HTML}{866A6D}
+\definecolor{SignalBlue}{HTML}{234C9F}
+\definecolor{SignalPale}{HTML}{F4F7FA}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage[switch]{lineno}
+
+\color{SumiInk}
+\setstretch{1.45}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.42em}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.16}
+\setlist[itemize]{leftmargin=1.3em,itemsep=0.18em,topsep=0.25em}
+\setlength{\headheight}{24pt}
+\emergencystretch=2em
+\raggedbottom
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\titleformat{\section}
+  {\Large\sffamily\bfseries\color{SumiInk}}
+  {\thesection}
+  {0.6em}
+  {}
+  [\vspace{0.25em}\color{ClayLine}\titlerule]
+\titleformat{\subsection}
+  {\large\sffamily\bfseries\color{SumiInk}}
+  {\thesubsection}
+  {0.55em}
+  {}
+\titleformat{\subsubsection}
+  {\normalsize\sffamily\bfseries\color{SumiInk}}
+  {}
+  {0em}
+  {}
+\titlespacing*{\section}{0pt}{1.3ex plus 0.4ex minus 0.2ex}{0.7ex}
+\titlespacing*{\subsection}{0pt}{1.15ex plus 0.2ex minus 0.2ex}{0.45ex}
+\titlespacing*{\subsubsection}{0pt}{0.9ex plus 0.15ex minus 0.1ex}{0.25ex}
+
+\pretocmd{\subsubsection}{\needspace{4\baselineskip}}{}{}
+\pretocmd{\subsection}{\needspace{5\baselineskip}}{}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\sffamily\color{SumiInk} Autonomous career evidence}
+\fancyhead[R]{\footnotesize\sffamily\color{DustyTaupe}\nouppercase{\leftmark}}
+\fancyfoot[C]{\footnotesize\sffamily\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{ClayLine}\leaders\hrule height \headrulewidth\hfill}}
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+
+\begin{document}
+\linenumbers
+\thispagestyle{empty}
+
+\begin{center}
+    \vspace*{-0.6em}
+
+    {\fontsize{20}{22}\selectfont\bfseries\color{SumiInk}
+    A proof-governed autonomy system for career conversion in embodied creative research and development\par}
+
+    \vspace{0.95em}
+
+    {\normalsize\color{SumiInk}
+    Alan N. Pham$^{1,*}$\par}
+
+    \vspace{0.38em}
+
+    {\small\color{DustyTaupe}
+    $^{1}$AO Labs; institutional affiliation and coauthor list to be confirmed before submission\\
+    $^{*}$Correspondence: Alan Pham\par}
+\end{center}
+
+\vspace{0.35em}
+\noindent\textbf{Autonomous agents are increasingly able to plan, monitor, and execute tool-mediated workflows, but a career objective is normally treated as motivation rather than as a measurable control problem. We report an early proof-governed system that converts a target role, Walt Disney Imagineering Research and Development mechanical Imagineering in Glendale, into a logged state machine with role-fit dimensions, guardrails, daily cycles, evidence counters, and a weekly manuscript update. The system is intentionally bounded: it does not fabricate credentials, send applications, claim relationships, or perform sensitive outreach without human approval. At the first evidence lock, the system tracked six role-fit dimensions, four portfolio anchors, one daily cycle, zero proof logs, zero outreach events, and one published weekly paper snapshot. The current fit score was 61 of 100, with the dominant bottleneck being principal-level network signal. The contribution is therefore not a claim that the system has secured a job. It is a falsifiable protocol for making an otherwise ambiguous career-conversion process auditable, adaptive, and constrained by truthful evidence.}
+
+\newpage
+\pagestyle{fancy}
+
+\section{Introduction}
+
+Tool-using language-model systems can now reason, call external services, write artifacts, and update deployed software~\cite{yao_react_2023,schick_toolformer_2023,wu_autogen_2023,wang_survey_2023}. These capabilities create an opportunity to treat long-horizon personal objectives as monitored systems rather than as episodic intentions. A career target is especially difficult because the desired outcome depends on evidence quality, technical fit, social trust, timing, applications, and human judgment. Without a state model, repeated effort can feel intense while remaining scientifically uninterpretable.
+
+This paper describes an early deployment of an autonomous career-evidence system aimed at WDI Research and Development mechanical Imagineering roles. The system uses the active WDI Research and Development Imagineer - Mechanical Design Engineer role as the live rung and the Principal R\&D Imagineer - Mechanical Engineer profile as the north-star target~\cite{disney_wdi_mechanical_2026}. The positioning line is deliberately stable: mechanical PhD, soft robotics, creative prototyping, and AI-assisted tools for human-facing physical experiences.
+
+The design borrows from proof-governed revenue experimentation: define a measurable state, choose the current bottleneck, constrain allowed actions, record interventions, and update a paper from real evidence rather than from aspiration. The system is not allowed to invent credentials, inflate relationships, send spam, or apply on behalf of the operator. It can monitor state, update dashboards, maintain a paper, identify the next constraint, and create or improve public artifacts that are grounded in existing work.
+
+\section{System architecture}
+
+The first deployment consists of a public dashboard, a Railway-hosted backend, a JSON runtime state file, and scheduled automation. The backend exposes health, operations-check, journal, weekly-paper, event, and daily-cycle endpoints. The dashboard is intentionally minimal: it shows backend state, fit score, bottleneck, weekly paper status, evidence counters, active experiment, next action, role-fit dimensions, and recent log entries.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{State variables at the first evidence lock. Values are reported from the live system after the first daily-cycle and weekly-paper update.}
+\label{tab:state}
+\rowcolors{2}{SignalPale}{white}
+\begin{tabularx}{\textwidth}{L{0.30\textwidth}Y}
+\toprule
+\rowcolor{ClayLine}
+\textbf{Variable} & \textbf{Recorded value} \\
+\midrule
+Target company and location & Walt Disney Imagineering R\&D, Glendale, California \\
+Live rung & WDI Research and Development Imagineer - Mechanical Design Engineer \\
+North star & Principal R\&D Imagineer - Mechanical Engineer \\
+Fit score & 61 of 100 after one daily cycle \\
+Dominant bottleneck & Principal-level network signal \\
+Evidence counters & Zero proof logs; one daily cycle; zero outreach events; four portfolio anchors \\
+Active experiment & WDI proof packet v0 \\
+Human approval boundary & Applications, sensitive outreach, referrals, and claims involving real people \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Decision policy}
+
+The policy scores six role-fit dimensions: mechanical depth, creative prototyping, human-facing physical experience, principal-level network, Glendale application packet, and the paper/system itself. The next action is chosen from the weakest current signal. At the first lock, the weakest signal was principal-level network, so the selected intervention was to create one real review path. This means preparing an artifact for a reviewer and asking a specific fit question, not sending automated messages or pretending a relationship exists.
+
+This policy is intentionally conservative. It can make public artifacts, update the dashboard, refresh the manuscript, and record evidence. It cannot manufacture the social proof that a principal-level role requires. If an action requires a real person's attention or reputation, the system must stop at preparation and request approval before sending.
+
+\section{Results}
+
+The current deployment is functional but early. The dashboard and backend are live, the weekly paper endpoint can publish a snapshot, and the site exposes a PDF manuscript. The first daily cycle increased the fit score from 60 to 61 by recording the selected action and improving the leadership-network dimension from 34 to 39. This is useful as an instrumentation result, not as a job-market result.
+
+\begin{table}[tbp]
+\centering
+\small
+\caption{Role-fit dimensions after the first autonomous cycle. Scores are internal operating metrics, not external hiring probabilities.}
+\label{tab:dimensions}
+\rowcolors{2}{SignalPale}{white}
+\begin{tabularx}{\textwidth}{L{0.34\textwidth}L{0.14\textwidth}Y}
+\toprule
+\rowcolor{ClayLine}
+\textbf{Dimension} & \textbf{Score} & \textbf{Current interpretation} \\
+\midrule
+Mechanical depth & 80 & Strong existing base, but still benefits from visible calculations and design artifacts. \\
+Creative prototyping & 82 & Strongest signal; should remain attached to concrete physical demonstrations. \\
+Human-facing physical experience & 72 & Credible but needs clearer guest-facing translation. \\
+Principal-level network & 39 & Current bottleneck; requires real review paths and trust signals. \\
+Glendale packet & 50 & Needs a compact, role-specific application surface. \\
+Autonomous career system & 44 & Early but now instrumented through dashboard, endpoints, and weekly manuscript. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Limitations and guardrails}
+
+The system cannot guarantee an offer. A job decision depends on timing, hiring needs, competition, interview performance, portfolio interpretation, and institutional context. The useful claim is narrower: the system can make progress legible, choose the next bottleneck, prevent fake progress, and turn repeated effort into evidence. It should be evaluated by proof velocity, reviewer-ready artifacts, quality of feedback paths, application readiness, interviews, and eventual conversion.
+
+The guardrails are part of the result. The system forbids fabricated credentials, fake outreach, invented Disney relationships, automated applications, and claims that are not supported by public or logged evidence. These constraints reduce short-term aggressiveness, but they preserve interpretability. If the system ever reports strong progress, that progress should be traceable to artifacts, logs, reviewers, applications, or outcomes.
+
+\section{Availability}
+
+The live dashboard is available at \url{https://imagineer.aolabs.io/} once DNS resolves, with a fallback at \url{https://aolabs.io/imagineer/}. The live backend is available at \url{https://imagineer-app-production.up.railway.app/api/imagineer/ops-check}. The weekly paper endpoint is available at \url{https://imagineer-app-production.up.railway.app/api/imagineer/weekly-paper}. This manuscript is an initial public artifact and should be refreshed from logged evidence as the system accumulates real proof.
+
+\printbibliography
+
+\end{document}
