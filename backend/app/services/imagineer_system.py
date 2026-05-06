@@ -368,11 +368,12 @@ class ImagineerSystem:
             state = self._load_state()
             ops = self.ops_check_without_weekly(state)
             sources = self._collect_review_sources(state, ops)
-            review = self._openai_review(state, ops, sources)
+            review, review_error = self._openai_review(state, ops, sources)
             review_model = self._openai_model()
             if review is None:
                 review = self._fallback_review(state, ops, sources)
                 review_model = "deterministic_fallback"
+                review["fallback_reason"] = review_error or "openai_unavailable"
 
             review["id"] = str(uuid.uuid4())
             review["created_at"] = _utc_now()
@@ -801,9 +802,9 @@ class ImagineerSystem:
         state: dict[str, Any],
         ops: dict[str, Any],
         sources: list[dict[str, Any]],
-    ) -> dict[str, Any] | None:
+    ) -> tuple[dict[str, Any] | None, str | None]:
         if not os.getenv("OPENAI_API_KEY"):
-            return None
+            return None, "missing_openai_api_key"
         try:
             from openai import OpenAI
 
@@ -825,27 +826,35 @@ class ImagineerSystem:
                 "sources": source_payload,
             }
             client = OpenAI(timeout=20)
-            response = client.chat.completions.create(
+            response = client.responses.create(
                 model=self._openai_model(),
-                response_format={"type": "json_object"},
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are an evidence-only autonomous reviewer for a WDI R&D mechanical Imagineering target. "
-                            "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
-                            "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
-                            "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
-                            "next_actions must be an array of objects with title, body, expected_signal, and source."
-                        ),
-                    },
-                    {"role": "user", "content": json.dumps(prompt, ensure_ascii=True)},
-                ],
+                instructions=(
+                    "You are an evidence-only autonomous reviewer for a WDI R&D mechanical Imagineering target. "
+                    "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
+                    "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
+                    "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
+                    "next_actions must be an array of objects with title, body, expected_signal, and source."
+                ),
+                input=json.dumps(prompt, ensure_ascii=True),
+                text={"format": {"type": "json_object"}},
+                max_output_tokens=3000,
             )
-            raw = response.choices[0].message.content or "{}"
-            return self._normalize_review(json.loads(raw))
-        except Exception:
-            return None
+            raw = self._response_output_text(response) or "{}"
+            return self._normalize_review(json.loads(raw)), None
+        except Exception as exc:
+            return None, f"{type(exc).__name__}: {str(exc)[:240]}"
+
+    def _response_output_text(self, response: Any) -> str:
+        direct = getattr(response, "output_text", None)
+        if direct:
+            return str(direct)
+        chunks: list[str] = []
+        for item in getattr(response, "output", []) or []:
+            for content in getattr(item, "content", []) or []:
+                text = getattr(content, "text", None)
+                if text:
+                    chunks.append(str(text))
+        return "".join(chunks)
 
     def _normalize_review(self, parsed: dict[str, Any]) -> dict[str, Any]:
         next_actions = []
@@ -1152,21 +1161,17 @@ class ImagineerSystem:
                 "recent_events": state["events"][:8],
                 "guardrails": state["guardrails"],
             }
-            response = client.chat.completions.create(
+            response = client.responses.create(
                 model=model,
-                response_format={"type": "json_object"},
-                messages=[
-                    {
-                        "role": "system",
-                        "content": (
-                            "Return strict JSON for one ethical, concrete career-compounding action. "
-                            "Keys: lane, title, body, why. No fabrication, spam, or unapproved applications."
-                        ),
-                    },
-                    {"role": "user", "content": json.dumps(prompt)},
-                ],
+                instructions=(
+                    "Return strict JSON for one ethical, concrete career-compounding action. "
+                    "Keys: lane, title, body, why. No fabrication, spam, or unapproved applications."
+                ),
+                input=json.dumps(prompt, ensure_ascii=True),
+                text={"format": {"type": "json_object"}},
+                max_output_tokens=800,
             )
-            raw = response.choices[0].message.content or "{}"
+            raw = self._response_output_text(response) or "{}"
             parsed = json.loads(raw)
             return {
                 "lane": str(parsed.get("lane") or weakest["key"])[:80],
