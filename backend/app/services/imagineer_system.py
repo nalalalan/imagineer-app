@@ -50,15 +50,51 @@ DEFAULT_STATE: dict[str, Any] = {
     "reviewer": {
         "mode": "autonomous_ai",
         "model": "gpt-5.5",
+        "scope": "whole_public_ao_labs_graph",
         "approval_boundary": "AI critique can run autonomously. Human approval is required before any external outreach or application action.",
         "source_urls": [
+            "https://aolabs.io/",
             "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
             "https://imagineer.aolabs.io/proof-packet.html",
+            "https://imagineer.aolabs.io/imagineer-autonomous-position-system.pdf",
+            "https://cv.aolabs.io",
+            "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf",
             "https://sarrus.aolabs.io",
             "https://fluxcell.aolabs.io",
+            "https://relay.aolabs.io",
+            "https://relaylive.aolabs.io",
             "https://ocean.aolabs.io",
+            "https://talk.aolabs.io",
+            "https://nerve.aolabs.io",
+            "https://duet.aolabs.io/hello",
+            "https://violin.aolabs.io",
+            "https://yum.aolabs.io",
+            "https://lily.aolabs.io",
             "https://la.disneyresearch.com/researchers/",
             "https://la.disneyresearch.com/publication/design-and-control-of-a-bipedal-robotic-character/",
+        ],
+    },
+    "identity_profile": {
+        "summary": (
+            "Alan Pham is a mechanical engineering PhD candidate building soft robotic materials, "
+            "reconfigurable mechanisms, morphing interfaces, research papers, public project surfaces, "
+            "and autonomous systems across AO Labs."
+        ),
+        "current_role": "Mechanical engineering PhD candidate at Worcester Polytechnic Institute; expected 2027.",
+        "technical_pattern": [
+            "Soft robotics, compliant mechanisms, continuum robots, modular soft robots, morphing surfaces, haptics, and human-robot interaction.",
+            "First-author Sarrus work on monolithically printed pneumatic cells that reconfigure into surfaces and robot bodies.",
+            "FluxCell work exploring printed electropermanent actuation for Sarrus cells.",
+            "Mechanical design experience spanning CAD, prototype fabrication, testing, dynamics, sensors, and physical systems.",
+        ],
+        "builder_pattern": [
+            "AO Labs turns projects into public surfaces, papers, dashboards, media walls, and autonomous loops.",
+            "Relay shows the user's preference for operational systems with metrics, state, experiments, logs, and money/result tracking.",
+            "Imagineer should use the same operational style for career conversion: evidence intake, source review, critique, action selection, and logged progress.",
+        ],
+        "wdi_relevance": [
+            "Strongest fit is embodied creative R&D: mechanisms that produce readable physical motion, shape change, responsiveness, surprise, or believable object behavior.",
+            "The gap is not motivation; the gap is reviewer-proof evidence that makes mechanical credibility and show value obvious from public artifacts.",
         ],
     },
     "portfolio": [
@@ -574,6 +610,7 @@ class ImagineerSystem:
         latest = next(iter(state.get("reviews", [])), None)
         report = {
             "mode": state.get("reviewer", {}).get("mode", "autonomous_ai"),
+            "scope": state.get("reviewer", {}).get("scope", "whole_public_ao_labs_graph"),
             "status": "review_ready" if latest else "not_run",
             "approval_boundary": state.get("reviewer", {}).get("approval_boundary", ""),
             "latest": self._compact_review(latest) if latest else None,
@@ -616,6 +653,7 @@ class ImagineerSystem:
             "active_experiment": ops["active_experiment"],
             "dimensions": ops["dimensions"],
             "portfolio": state["portfolio"],
+            "identity_profile": state.get("identity_profile", {}),
             "recent_journal": state["journal"][:8],
             "guardrails": state["guardrails"],
         }
@@ -637,6 +675,7 @@ class ImagineerSystem:
                 urls.append(str(target_url).replace("www.disneycareers.com/en/job/", "jobs.disneycareers.com/job/"))
         urls.extend(str(url) for url in reviewer_urls)
         urls.extend(str(item.get("url")) for item in state.get("portfolio", []) if item.get("url"))
+        urls.extend(self._discover_aolabs_links())
 
         seen: set[str] = set()
         for url in urls:
@@ -645,7 +684,39 @@ class ImagineerSystem:
                 continue
             seen.add(clean_url)
             sources.append(self._fetch_url_source(clean_url))
-        return sources[:14]
+        return sources[:28]
+
+    def _discover_aolabs_links(self) -> list[str]:
+        try:
+            request = Request(
+                "https://aolabs.io/",
+                headers={
+                    "User-Agent": "AO-Labs-Imagineer-AI-Reviewer/1.0",
+                    "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.3",
+                },
+            )
+            with urlopen(request, timeout=7) as response:
+                root_html = response.read(220_000).decode("utf-8", errors="ignore")
+        except (HTTPError, URLError, OSError, TimeoutError, ValueError):
+            return []
+        urls = re.findall(r'href=["\']([^"\']+)["\']', root_html)
+        if not urls:
+            urls = re.findall(r"https://[a-z0-9.-]+\.aolabs\.io[^\s<>\"]*", root_html, flags=re.I)
+        discovered: list[str] = []
+        for url in urls:
+            clean = url.strip()
+            if clean.startswith("//"):
+                clean = "https:" + clean
+            if clean.startswith("/"):
+                clean = "https://aolabs.io" + clean
+            if not clean.startswith("https://"):
+                continue
+            if ".aolabs.io" not in clean and "aolabs.io" not in clean:
+                continue
+            clean = clean.split("#", 1)[0]
+            if clean not in discovered:
+                discovered.append(clean)
+        return discovered[:20]
 
     def _fetch_url_source(self, url: str) -> dict[str, Any]:
         try:
@@ -689,14 +760,34 @@ class ImagineerSystem:
         lowered = url.lower()
         if "jobs.disneycareers.com" in lowered or "disneycareers.com" in lowered:
             return "Disney Careers role listing"
+        if lowered.rstrip("/") == "https://aolabs.io":
+            return "AO Labs home"
         if "imagineer.aolabs.io/proof-packet" in lowered:
             return "WDI proof packet"
+        if "imagineer.aolabs.io/imagineer-autonomous-position-system" in lowered:
+            return "Imagineer paper PDF"
         if "sarrus.aolabs.io" in lowered:
             return "Sarrus portfolio"
         if "fluxcell.aolabs.io" in lowered:
             return "FluxCell portfolio"
+        if "relaylive.aolabs.io" in lowered:
+            return "Relay live dashboard"
+        if "relay.aolabs.io" in lowered:
+            return "Relay product"
         if "ocean.aolabs.io" in lowered:
             return "Ocean portfolio"
+        if "talk.aolabs.io" in lowered:
+            return "Talk app"
+        if "nerve.aolabs.io" in lowered:
+            return "Nerve app"
+        if "duet.aolabs.io" in lowered:
+            return "Duet app"
+        if "violin.aolabs.io" in lowered:
+            return "Violin portfolio"
+        if "yum.aolabs.io" in lowered:
+            return "Yum app"
+        if "lily.aolabs.io" in lowered:
+            return "Lily app"
         if "la.disneyresearch.com/researchers" in lowered:
             return "Disney Research roster"
         if "bipedal-robotic-character" in lowered:

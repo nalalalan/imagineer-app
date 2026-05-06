@@ -26,6 +26,7 @@ const fallbackOps = {
   },
   reviewer: {
     mode: "autonomous_ai",
+    scope: "whole_public_ao_labs_graph",
     status: "not_run",
     latest: null
   },
@@ -129,7 +130,7 @@ function render(ops, connected) {
   setText("#action-title", action.title || "--");
   setText("#action-body", action.body || "--");
   setText("#reviewer-status", latestReview.verdict || clean(reviewer.status || "not run"));
-  setText("#reviewer-detail", latestReview.top_issue || reviewerAction.title || "No autonomous review has run yet.");
+  setText("#reviewer-detail", latestReview.top_issue || reviewerAction.title || clean(reviewer.scope || "Reviews the whole public AO Labs graph."));
   setText("#paper-name", paperName);
   setText("#metric-proof", evidence.proof_events ?? "--");
   setText("#metric-cycles", evidence.daily_cycles ?? "--");
