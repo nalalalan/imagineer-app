@@ -813,7 +813,7 @@ class ImagineerSystem:
                     "name": source["name"],
                     "url": source.get("url", ""),
                     "status": source["status"],
-                    "text": source.get("text", "")[:4200],
+                    "text": source.get("text", "")[:2600],
                 }
                 for source in sources
             ]
@@ -825,7 +825,7 @@ class ImagineerSystem:
                 "guardrails": state["guardrails"],
                 "sources": source_payload,
             }
-            client = OpenAI(timeout=20)
+            client = OpenAI(timeout=90)
             response = client.responses.create(
                 model=self._openai_model(),
                 instructions=(
