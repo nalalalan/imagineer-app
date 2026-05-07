@@ -423,7 +423,7 @@ class ImagineerSystem:
                 {
                     "id": str(uuid.uuid4()),
                     "created_at": paper["updated_at"],
-                    "title": "Weekly progress paper updated",
+                    "title": "Progress paper updated",
                     "body": paper["headline_result"],
                     "tags": ["weekly_paper", "paper_system", "application_packet"],
                 },
@@ -514,7 +514,7 @@ class ImagineerSystem:
             {
                 "heading": "Abstract",
                 "body": (
-                    "This weekly paper reports the progress of an autonomous, guardrailed career-conversion system "
+                    "This continuous paper reports the progress of an autonomous, guardrailed career-conversion system "
                     "targeting WDI R&D mechanical Imagineering roles. The system converts Alan-owned work, "
                     "daily actions, experiments, and guardrails into an adaptive decision loop."
                 ),
@@ -528,7 +528,7 @@ class ImagineerSystem:
                 ),
             },
             {
-                "heading": "Weekly Results",
+                "heading": "Current Results",
                 "body": (
                     f"This week has {len(recent_events)} logged events, {ops['evidence']['proof_events']} total work logs, "
                     f"{ops['evidence']['daily_cycles']} daily cycles, {ops['evidence']['reviewer_ready_artifacts']} public artifacts, "
@@ -558,8 +558,8 @@ class ImagineerSystem:
         return {
             "id": str(uuid.uuid4()),
             "week_id": week_id,
-            "title": "Weekly Progress Paper: Autonomous Imagineer Position System",
-            "status": "published_weekly_snapshot" if persisted else "live_preview_until_weekly_snapshot",
+            "title": "Progress Paper: Autonomous Imagineer Position System",
+            "status": "published_paper_snapshot" if persisted else "live_preview_until_paper_snapshot",
             "updated_at": _utc_now(),
             "week_start": week_start.isoformat(),
             "next_update_due": next_update.isoformat(),

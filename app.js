@@ -155,7 +155,7 @@ function render(ops, connected) {
   setText("#target-role", target.north_star_title || "Principal R&D Imagineer - Mechanical Engineer");
   setText("#target-detail", `${target.company || "Walt Disney Imagineering R&D"} / ${target.location || "Glendale, California"}`);
   setText("#paper-title", paperName);
-  setText("#paper-status", "Current PDF. Weekly update.");
+  setText("#paper-status", "Current PDF. Continuous record.");
 
   renderLanes(dimensions);
 }

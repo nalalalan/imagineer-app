@@ -17,6 +17,7 @@ Adaptive AO Labs system for moving Alan toward WDI R&D mechanical Imagineering r
   - `POST /api/imagineer/daily-cycle`
   - `POST /api/imagineer/weekly-paper/run`
 - Ships a paper PDF at `imagineer-autonomous-position-system.pdf`, with source in `manuscripts/imagineer_nature_style/main.tex`.
+- Paper continuity rule: any substantive change to the dashboard, backend, reviewer policy, source graph, public profile, metrics, guardrails, or paper-backed evidence must update the manuscript source and PDF in the same work cycle.
 - Uses `OPENAI_API_KEY` when present for the daily planner; otherwise falls back to deterministic weakest-signal planning.
 
 ## Local Run
