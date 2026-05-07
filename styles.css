@@ -127,6 +127,17 @@ button:disabled {
   color: var(--ink);
 }
 
+.button-link.ao-home {
+  width: 38px;
+  padding: 0;
+}
+
+.button-link.ao-home img {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
 .panel {
   margin-top: 18px;
   padding: 28px;
@@ -862,7 +873,7 @@ h2 {
 
   .brand,
   .actions,
-  .actions > *,
+  .actions > *:not(.ao-home),
   .paper-actions,
   .paper-actions > * {
     width: 100%;

@@ -28,7 +28,7 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <a href="https://aolabs.io" class="brand" aria-label="AO Labs">
+      <a href="/" class="brand" aria-label="Imagineer home">
         <img src="./favicon.svg" alt="">
         <span>Imagineer</span>
       </a>
@@ -36,7 +36,9 @@
         <button id="run-review" type="button">Update readout</button>
         <button id="refresh" type="button">Refresh</button>
         <a class="button-link secondary" href="./profile.html">Profile</a>
-        <a class="button-link" href="/paper">Paper</a>
+        <a class="button-link secondary ao-home" href="https://aolabs.io/" aria-label="AO Labs">
+          <img src="https://aolabs.io/favicon.svg" alt="">
+        </a>
       </div>
     </header>
 
@@ -47,7 +49,7 @@
         <p id="paper-status" class="paper-copy">Current PDF. Continuous record.</p>
       </div>
       <div class="paper-actions">
-        <a class="button-link" href="/paper.pdf">Open PDF</a>
+        <a class="button-link" href="/paper.pdf" download>Open PDF</a>
         <a class="button-link secondary" href="/paper/source.tex">Source</a>
         <a class="button-link secondary" href="./profile.html">Open profile</a>
       </div>
