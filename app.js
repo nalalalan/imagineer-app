@@ -175,18 +175,17 @@ function buildReadout(ops, latestReview) {
       ? "Credible for WDI R&D mechanical design. Principal signal is the active gap."
       : "Promising technical base. Principal signal is still thin.",
     why: (
-      "The Disney outcome gets stronger when three things are obvious at a glance: real mechanism depth, memorable physical motion, and principal-level ownership. "
-      + "Sarrus carries the mechanical case. The system is now supposed to turn that into a cleaner Disney-facing trajectory instead of making you read long notes."
+      "Sarrus is the technical anchor. The active gap is principal-scope ownership: technical direction, integrated systems, design-review leadership, collaborators, or comparable responsibility."
     ),
     caption: "Controllable readiness. Not a hiring probability.",
-    whereNowTitle: "Sarrus makes the case credible.",
+    whereNowTitle: "Technical base is credible.",
     whereNowBody: `Mechanical depth is ${scoreText(mechanical)}. The public record now shows mechanism geometry, pneumatic actuation, modular assembly, measured behavior, and motion examples.`,
-    whereNeededTitle: "Principal scope is the real gap.",
+    whereNeededTitle: "Ownership signal is thin.",
     whereNeededBody: `Principal signal is ${scoreText(principal)}. Disney still needs to see ownership: technical direction, integrated systems, design-review leadership, collaborators, or comparable responsibility.`,
-    systemOwnedTitle: "The app should keep moving without you.",
-    systemOwnedBody: `It can re-read AO Labs, score the lanes, update this dashboard, update the profile/paper, and log what changed. It should not ask you to interpret long AI notes.`,
-    alanGateTitle: "Your gate is only external action.",
-    alanGateBody: "You should only need to approve applications, referral asks, direct outreach, or anything that represents you to a person. Everything else is system work.",
+    systemOwnedTitle: "System-owned work.",
+    systemOwnedBody: `Re-read AO Labs, score the lanes, update this dashboard, update the profile/paper, and log source-backed changes.`,
+    alanGateTitle: "Approval boundary.",
+    alanGateBody: "Applications, referral asks, direct outreach, or person-facing claims require approval.",
     latestText,
     mechanical,
     physical,
@@ -201,21 +200,21 @@ function renderLanes(dimensions) {
     {
       key: "mechanical_depth",
       title: "Mechanical case",
-      why: "This is why WDI should take the work seriously.",
+      why: "Mechanism credibility: geometry, actuation, measured behavior.",
       now: "Sarrus is the anchor: mechanism geometry, actuation path, build state, and measured behavior.",
       system: "Keep Sarrus primary, keep figures current, and make measurements easier to inspect."
     },
     {
       key: "physical_experience",
       title: "Disney motion",
-      why: "This is what turns robotics into Imagineering.",
+      why: "Readable motion and embodied interaction.",
       now: "The motion exists: surface waves, object manipulation, crawling, and rolling.",
       system: "Translate one motion sequence into a short, human-facing story: what someone sees, feels, or believes."
     },
     {
       key: "leadership_network",
       title: "Principal signal",
-      why: "This is the difference between credible candidate and principal-level hire.",
+      why: "Visible ownership and technical direction.",
       now: "The weak part is visible ownership, technical direction, and external validation.",
       system: "Mine the public record for leadership signals, prepare clean source-backed framing, and wait for approval before any person-facing step."
     }

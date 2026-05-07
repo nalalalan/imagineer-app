@@ -23,7 +23,7 @@
   <meta property="og:description" content="A live WDI R&amp;D readout for Alan's public AO Labs record, review system, and paper.">
   <meta property="og:url" content="https://imagineer.aolabs.io/">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=20260506-inevitable">
+  <link rel="stylesheet" href="./styles.css?v=20260506-operational">
 </head>
 <body>
   <main class="shell">
@@ -57,7 +57,7 @@
         <div>
           <p class="kicker">WDI R&amp;D state</p>
           <h1 id="current-read">Loading the current state.</h1>
-          <p id="why-care" class="readout-copy">The dashboard is checking where Alan is, what still separates him from the Disney target, and what the autonomous system is handling.</p>
+          <p id="why-care" class="readout-copy">Current WDI R&amp;D alignment, active gap, and source-backed system state.</p>
         </div>
         <aside class="readiness-card" aria-label="Controllable readiness">
           <span>Controllable readiness</span>
@@ -69,12 +69,12 @@
 
       <div class="truth-grid" aria-label="Current state">
         <article>
-          <span>Where I am</span>
+          <span>Current</span>
           <strong id="where-now-title">--</strong>
           <p id="where-now-body">--</p>
         </article>
         <article>
-          <span>Where it needs to be</span>
+          <span>Principal signal</span>
           <strong id="where-needed-title">--</strong>
           <p id="where-needed-body">--</p>
         </article>
@@ -84,7 +84,7 @@
           <p id="system-owned-body">--</p>
         </article>
         <article>
-          <span>Alan</span>
+          <span>Approval</span>
           <strong id="alan-gate-title">--</strong>
           <p id="alan-gate-body">--</p>
         </article>
@@ -95,9 +95,9 @@
       <div class="section-head">
         <div>
           <p class="kicker">Signals</p>
-          <h2 id="lanes-title">What changes the outcome</h2>
+          <h2 id="lanes-title">Outcome signals</h2>
         </div>
-        <span>Only the few signals that matter right now.</span>
+        <span>Mechanical case, Disney motion, principal signal.</span>
       </div>
       <div id="lanes" class="lane-grid"></div>
     </section>
@@ -147,6 +147,6 @@
 
   </main>
 
-  <script src="./app.js?v=20260506-inevitable"></script>
+  <script src="./app.js?v=20260506-operational"></script>
 </body>
 </html>

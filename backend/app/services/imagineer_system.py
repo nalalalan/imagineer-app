@@ -835,7 +835,7 @@ class ImagineerSystem:
                 for source in sources
             ]
             prompt = {
-                "review_goal": "Produce a short state readout that helps Alan understand where he is relative to WDI R&D Imagineering and what the autonomous system should do next.",
+                "review_goal": "Produce a short operational readout: current WDI R&D alignment, active principal-scope gap, system-owned work, approval boundary, and source-backed status.",
                 "target": state["target"],
                 "positioning": state["positioning"],
                 "current_ops": ops,
@@ -848,16 +848,16 @@ class ImagineerSystem:
                 instructions=(
                     "You are an evidence-only autonomous career operator for a WDI R&D mechanical Imagineering target. "
                     "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
-                    "The user is Alan. Write for him, not for an imaginary reviewer. Do not make him manage AI quality control. "
-                    "The useful output is: where Alan is now, what still separates him from Principal-level WDI R&D, "
-                    "what the system can handle autonomously, and what requires Alan approval. "
-                    "Do not complain about AI-generated pages as if Alan needs to manually fix them. If the issue is page/profile/paper quality, "
-                    "make the next action system-owned. Only person-facing steps, applications, referral asks, or sensitive outreach require Alan approval. "
-                    "Write like a concise senior research/operator readout, not a checklist, homework prompt, motivational page, or reviewer-prep worksheet. "
+                    "The user is Alan. Write for a serious researcher/operator, not for an imaginary reviewer. "
+                    "State the actual condition. Do not explain why the page exists, narrate system intent, or describe how the output should make Alan feel. "
+                    "Do not write sentences whose only function is to say that the system is helping, reducing burden, avoiding long notes, or moving automatically. "
+                    "If the issue is page/profile/paper quality, route it into system-owned work without making it Alan-facing commentary. "
+                    "Only person-facing steps, applications, referral asks, or sensitive outreach require Alan approval. "
+                    "Write like a concise technical status surface, not a checklist, homework prompt, motivational page, or reviewer-prep worksheet. "
                     "Avoid these terms and close variants in displayed strings: proof packet, evidence packet, reviewer-facing, reviewer-visible, "
                     "reviewer-proof, best evidence, evidence gaps, evidence to create, next evidence, best next move, action items, homework, "
                     "show-value, source coverage, and what a reviewer can inspect. "
-                    "Prefer short, plain phrases: current state, strongest signal, open signal, system move, Alan gate, source depth, measurement table, motion examples. "
+                    "Prefer short, plain phrases: current, signals, system, approval boundary, source depth, measurements, geometry, actuation, motion, constraints. "
                     "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
                     "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
                     "next_actions must be an array of objects with title, body, expected_signal, and source. "
@@ -936,14 +936,12 @@ class ImagineerSystem:
             "score": max(0, min(int(ops.get("fit_score") or 0), 100)),
             "top_issue": "Sarrus makes the mechanical case credible; Principal-level ownership is not visible enough yet.",
             "why_it_matters": (
-                "The WDI outcome gets stronger when three things are obvious at a glance: real mechanism depth, memorable "
-                "physical motion, and principal-level ownership. The first is credible now. The second and third still need "
-                "cleaner public framing and source-backed signals."
+                "Current state: credible mechanism depth; developing Disney motion signal; thin principal-scope ownership signal."
             ),
             "best_existing_evidence": [
-                "Sarrus gives the core soft robotics mechanism and physical morphing surface record.",
-                "FluxCell gives a concrete actuation route for moving beyond tethered pneumatic demos.",
-                "The profile already targets WDI R&D language instead of a generic academic robotics framing.",
+                "Sarrus establishes mechanism geometry, pneumatic actuation, modular assembly, and measured behavior.",
+                "FluxCell establishes an actuation direction for moving beyond tethered pneumatic demos.",
+                "The profile targets WDI R&D language instead of generic academic robotics framing.",
             ],
             "evidence_gaps": [
                 "Principal-level ownership is not yet visible through led design reviews, integrated systems, collaborators, budget, schedule, or comparable responsibility.",
@@ -952,13 +950,13 @@ class ImagineerSystem:
             ],
             "next_actions": [
                 {
-                    "title": "Convert the latest readout into a cleaner state page.",
-                    "body": "Show Alan where he is, what still separates him from Principal, and what the system is doing automatically. Hide long raw critique lists by default.",
-                    "expected_signal": "The dashboard becomes a decision surface instead of a pile of AI feedback.",
+                    "title": "Update the state surface.",
+                    "body": "Replace raw critique sections with current signal, principal gap, system-owned work, and approval boundary.",
+                    "expected_signal": "The dashboard reads as operational state.",
                     "source": source_names or "Live Imagineer state",
                 },
                 {
-                    "title": "Make the Disney motion signal clearer.",
+                    "title": "Clarify Disney motion.",
                     "body": "Use Sarrus as the anchor and turn one object-motion sequence into a concise physical-experience story.",
                     "expected_signal": "The work reads as WDI physical interaction R&D, not only as soft robotics research.",
                     "source": "Sarrus mechanism and profile sources",
@@ -970,8 +968,7 @@ class ImagineerSystem:
                 "Keep external outreach and applications behind approval.",
             ],
             "reviewer_summary": (
-                "Autonomous fallback review used available live state and public sources. The next compounding move is a clearer "
-                "state surface and a stronger Sarrus-to-Disney motion translation, not more raw critique text."
+                "Available sources show credible mechanism depth, developing motion translation, and thin principal-scope ownership."
             ),
         }
 
@@ -1452,7 +1449,7 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Turn the readout into one system-owned improvement." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Use the current readout to update the dashboard, profile, paper, or Sarrus framing without asking Alan to interpret long AI notes."
+                    "Use the current readout to update the dashboard, profile, paper, or Sarrus framing."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
