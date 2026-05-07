@@ -77,8 +77,8 @@ DEFAULT_STATE: dict[str, Any] = {
     "identity_profile": {
         "summary": (
             "Alan Pham is a mechanical engineering PhD candidate building soft robotic materials, "
-            "reconfigurable mechanisms, morphing interfaces, research papers, public project surfaces, "
-            "and autonomous systems across AO Labs."
+            "reconfigurable mechanisms, motion prototypes, human-facing physical systems, public project surfaces, "
+            "research papers, and autonomous systems across AO Labs."
         ),
         "current_role": "Mechanical engineering PhD candidate at Worcester Polytechnic Institute; expected 2027.",
         "technical_pattern": [
@@ -944,7 +944,7 @@ class ImagineerSystem:
             ],
             "evidence_gaps": [
                 "Principal-level ownership is not yet visible through led design reviews, integrated systems, collaborators, budget, schedule, or comparable responsibility.",
-                "The strongest motion example still needs to read as a human-facing physical experience, not only as a robotics result.",
+                "The strongest motion example still needs to read as a human-facing motion sequence, not only as a robotics result.",
                 "The Sarrus quantitative record still needs cleaner digitized curves, uncertainty, sample count, and test conditions.",
             ],
             "next_actions": [
@@ -956,9 +956,9 @@ class ImagineerSystem:
                 },
                 {
                     "title": "Clarify Disney motion.",
-                    "body": "Use Sarrus as the anchor and turn one object-motion sequence into a concise physical-experience story.",
+                    "body": "Use Sarrus as the anchor and turn one object-motion sequence into a concise human-facing motion sequence.",
                     "expected_signal": "The work reads as WDI physical interaction R&D, not only as soft robotics research.",
-                    "source": "Sarrus mechanism and profile sources",
+                    "source": "Sarrus and profile sources",
                 },
             ],
             "packet_edits": [
@@ -1114,9 +1114,9 @@ class ImagineerSystem:
 
     def _alan_facing_text(self, text: str) -> str:
         replacements = (
-            ("Sarrus mechanism proof", "Sarrus mechanism"),
-            ("sarrus mechanism proof", "Sarrus mechanism"),
-            ("mechanism proof", "mechanism record"),
+            ("Sarrus mechanism proof", "Sarrus record"),
+            ("sarrus mechanism proof", "Sarrus record"),
+            ("mechanism proof", "mechanical record"),
             ("proof packet", "profile"),
             ("Proof packet", "Profile"),
             ("evidence packet", "profile"),
