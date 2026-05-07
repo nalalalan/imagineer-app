@@ -167,8 +167,7 @@ DEFAULT_STATE: dict[str, Any] = {
             "name": "Autonomous career loop v0",
             "status": "active",
             "hypothesis": (
-                "If the system repeatedly critiques Alan-owned work against live WDI R&D signals, "
-                "the next useful system-owned update becomes obvious without making Alan interpret a long critique."
+                "Repeated source reads against live WDI R&D signals produce one system-owned update."
             ),
             "variable": "Public-source depth and critique specificity.",
             "success_metric": "One autonomous review run, one short state readout, and one system-owned profile, portfolio, or paper improvement selected from the review.",
@@ -849,8 +848,8 @@ class ImagineerSystem:
                     "You are an evidence-only autonomous career operator for a WDI R&D mechanical Imagineering target. "
                     "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
                     "The user is Alan. Write for a serious researcher/operator, not for an imaginary reviewer. "
-                    "State the actual condition. Do not explain why the page exists, narrate system intent, or describe how the output should make Alan feel. "
-                    "Do not write sentences whose only function is to say that the system is helping, reducing burden, avoiding long notes, or moving automatically. "
+                    "State the actual condition. Do not explain why the page exists, narrate system intent, describe how the output should make Alan feel, or talk down to the reader. "
+                    "Do not write sentences whose only function is to say that the system is helping, reducing burden, avoiding notes, or moving automatically. "
                     "If the issue is page/profile/paper quality, route it into system-owned work without making it Alan-facing commentary. "
                     "Only person-facing steps, applications, referral asks, or sensitive outreach require Alan approval. "
                     "Write like a concise technical status surface, not a checklist, homework prompt, motivational page, or reviewer-prep worksheet. "
@@ -1080,7 +1079,7 @@ class ImagineerSystem:
 
     def _strip_incomplete_next_move(self, text: str) -> str:
         patterns = (
-            r"\s+The best next move is to\s*$",
+            r"\s+The current move is to\s*$",
             r"\s+The selected next move is to\s*$",
         )
         cleaned = text
@@ -1128,16 +1127,16 @@ class ImagineerSystem:
             ("Reviewer-visible", "Public"),
             ("reviewer-proof", "source-backed"),
             ("Reviewer-proof", "Source-backed"),
-            ("best evidence", "strongest signals"),
-            ("Best evidence", "Strongest signals"),
-            ("evidence gaps", "unresolved signals"),
-            ("Evidence gaps", "Unresolved signals"),
+            ("best evidence", "current signals"),
+            ("Best evidence", "Current signals"),
+            ("evidence gaps", "open signals"),
+            ("Evidence gaps", "Open signals"),
             ("evidence to create", "unresolved"),
             ("Evidence to create", "Unresolved"),
             ("next evidence", "unresolved signal"),
             ("Next evidence", "Unresolved signal"),
-            ("best next move", "current constraint"),
-            ("Best next move", "Current constraint"),
+            ("best next move", "current move"),
+            ("Best next move", "Current move"),
             ("show-value", "motion"),
             ("Show-value", "Motion"),
             ("source coverage", "source depth"),

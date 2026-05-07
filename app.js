@@ -155,7 +155,7 @@ function render(ops, connected) {
   setText("#target-role", target.north_star_title || "Principal R&D Imagineer - Mechanical Engineer");
   setText("#target-detail", `${target.company || "Walt Disney Imagineering R&D"} / ${target.location || "Glendale, California"}`);
   setText("#paper-title", paperName);
-  setText("#paper-status", `PDF is live; weekly system paper updates separately from this dashboard.`);
+  setText("#paper-status", "Current PDF. Weekly update.");
 
   renderLanes(dimensions);
 }
@@ -174,18 +174,16 @@ function buildReadout(ops, latestReview) {
     headline: credible
       ? "Credible for WDI R&D mechanical design. Principal signal is the active gap."
       : "Promising technical base. Principal signal is still thin.",
-    why: (
-      "Sarrus is the technical anchor. The active gap is principal-scope ownership: technical direction, integrated systems, design-review leadership, collaborators, or comparable responsibility."
-    ),
+    why: "Sarrus: mechanism depth. Active gap: principal-scope ownership.",
     caption: "Controllable readiness. Not a hiring probability.",
-    whereNowTitle: "Technical base is credible.",
-    whereNowBody: `Mechanical depth is ${scoreText(mechanical)}. The public record now shows mechanism geometry, pneumatic actuation, modular assembly, measured behavior, and motion examples.`,
-    whereNeededTitle: "Ownership signal is thin.",
-    whereNeededBody: `Principal signal is ${scoreText(principal)}. Disney still needs to see ownership: technical direction, integrated systems, design-review leadership, collaborators, or comparable responsibility.`,
-    systemOwnedTitle: "System-owned work.",
-    systemOwnedBody: `Re-read AO Labs, score the lanes, update this dashboard, update the profile/paper, and log source-backed changes.`,
-    alanGateTitle: "Approval boundary.",
-    alanGateBody: "Applications, referral asks, direct outreach, or person-facing claims require approval.",
+    whereNowTitle: scoreText(mechanical),
+    whereNowBody: "geometry / actuation / assembly / measurement / motion",
+    whereNeededTitle: scoreText(principal),
+    whereNeededBody: "ownership / technical direction / collaborators / validation",
+    systemOwnedTitle: `${latestReview.source_count || ops.reviewer?.source_count || 0} sources`,
+    systemOwnedBody: "AO Labs read / lane scores / profile / paper / logs",
+    alanGateTitle: "approval",
+    alanGateBody: "applications / referrals / direct outreach / person-facing claims",
     latestText,
     mechanical,
     physical,
@@ -200,23 +198,23 @@ function renderLanes(dimensions) {
     {
       key: "mechanical_depth",
       title: "Mechanical case",
-      why: "Mechanism credibility: geometry, actuation, measured behavior.",
-      now: "Sarrus is the anchor: mechanism geometry, actuation path, build state, and measured behavior.",
-      system: "Keep Sarrus primary, keep figures current, and make measurements easier to inspect."
+      why: "Geometry, actuation, measured behavior.",
+      now: "Sarrus: mechanism geometry, actuation path, build state, measured behavior.",
+      system: "Current figures, measurements, source-backed claims."
     },
     {
       key: "physical_experience",
       title: "Disney motion",
       why: "Readable motion and embodied interaction.",
-      now: "The motion exists: surface waves, object manipulation, crawling, and rolling.",
-      system: "Translate one motion sequence into a short, human-facing story: what someone sees, feels, or believes."
+      now: "Surface waves, object manipulation, crawling, rolling.",
+      system: "One motion sequence: cause, effect, repeatability, physical result."
     },
     {
       key: "leadership_network",
       title: "Principal signal",
       why: "Visible ownership and technical direction.",
-      now: "The weak part is visible ownership, technical direction, and external validation.",
-      system: "Mine the public record for leadership signals, prepare clean source-backed framing, and wait for approval before any person-facing step."
+      now: "Thin: ownership, technical direction, external validation.",
+      system: "Source-backed leadership framing; approval before person-facing action."
     }
   ];
 
@@ -280,8 +278,8 @@ function clean(value) {
     ["Evidence to create", "Open signal"],
     ["next evidence", "open signal"],
     ["Next evidence", "Open signal"],
-    ["best next move", "current state"],
-    ["Best next move", "Current state"],
+    ["best next move", "current move"],
+    ["Best next move", "Current move"],
     ["show-value", "motion"],
     ["Show-value", "Motion"],
     ["source coverage", "source depth"],
