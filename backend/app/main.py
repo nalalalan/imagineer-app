@@ -13,6 +13,9 @@ from backend.app.services.imagineer_system import ImagineerSystem
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
+PAPER_PDF = ROOT_DIR / "imagineer-autonomous-position-system.pdf"
+PAPER_TEX = ROOT_DIR / "manuscripts" / "imagineer_nature_style" / "main.tex"
+PAPER_BIB = ROOT_DIR / "manuscripts" / "imagineer_nature_style" / "references.bib"
 SYSTEM = ImagineerSystem()
 
 
@@ -116,6 +119,44 @@ def index() -> FileResponse:
     if not index_path.exists():
         raise HTTPException(status_code=404, detail="index.html not found")
     return FileResponse(index_path)
+
+
+def _paper_file_response(path: Path, *, media_type: str, filename: str | None = None) -> FileResponse:
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="paper file not found")
+    return FileResponse(path, media_type=media_type, filename=filename)
+
+
+@app.get("/paper")
+def paper_index() -> FileResponse:
+    paper_path = ROOT_DIR / "paper.html"
+    if not paper_path.exists():
+        raise HTTPException(status_code=404, detail="paper.html not found")
+    return FileResponse(paper_path)
+
+
+@app.get("/paper/")
+def paper_index_slash() -> FileResponse:
+    return paper_index()
+
+
+@app.get("/paper.pdf")
+def paper_pdf() -> FileResponse:
+    return _paper_file_response(
+        PAPER_PDF,
+        media_type="application/pdf",
+        filename="An autonomous career system for embodied creative research and development.pdf",
+    )
+
+
+@app.get("/paper/source.tex")
+def paper_tex() -> FileResponse:
+    return _paper_file_response(PAPER_TEX, media_type="text/plain; charset=utf-8")
+
+
+@app.get("/paper/references.bib")
+def paper_bib() -> FileResponse:
+    return _paper_file_response(PAPER_BIB, media_type="text/plain; charset=utf-8")
 
 
 @app.get("/{asset_path:path}")
