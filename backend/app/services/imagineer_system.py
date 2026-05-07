@@ -51,7 +51,7 @@ DEFAULT_STATE: dict[str, Any] = {
         "mode": "autonomous_ai",
         "model": "gpt-5.5",
         "scope": "whole_public_ao_labs_graph",
-        "approval_boundary": "AI critique can run autonomously. Human approval is required before any external outreach or application action.",
+        "approval_boundary": "The system can review, score, rewrite internal surfaces, and update public AO Labs pages. Human approval is required before applications, referral asks, direct outreach, or anything person-facing.",
         "source_urls": [
             "https://aolabs.io/",
             "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
@@ -164,14 +164,14 @@ DEFAULT_STATE: dict[str, Any] = {
     "experiments": [
         {
             "id": "autonomous-ai-reviewer-v0",
-            "name": "Autonomous AI reviewer v0",
+            "name": "Autonomous career loop v0",
             "status": "active",
             "hypothesis": (
                 "If the system repeatedly critiques Alan-owned work against live WDI R&D signals, "
-                "the next useful artifact becomes obvious without waiting for a human reviewer."
+                "the next useful system-owned update becomes obvious without making Alan interpret a long critique."
             ),
             "variable": "Public-source depth and critique specificity.",
-            "success_metric": "One autonomous review run, a ranked unresolved-signal list, and one concrete profile or portfolio improvement selected from the review.",
+            "success_metric": "One autonomous review run, one short state readout, and one system-owned profile, portfolio, or paper improvement selected from the review.",
             "started_at": "2026-05-06",
         },
         {
@@ -835,7 +835,7 @@ class ImagineerSystem:
                 for source in sources
             ]
             prompt = {
-                "review_goal": "Autonomously critique Alan Pham's WDI R&D Imagineering profile and portfolio fit.",
+                "review_goal": "Produce a short state readout that helps Alan understand where he is relative to WDI R&D Imagineering and what the autonomous system should do next.",
                 "target": state["target"],
                 "positioning": state["positioning"],
                 "current_ops": ops,
@@ -846,18 +846,22 @@ class ImagineerSystem:
             response = client.responses.create(
                 model=self._openai_model(),
                 instructions=(
-                    "You are an evidence-only autonomous reviewer for a WDI R&D mechanical Imagineering target. "
+                    "You are an evidence-only autonomous career operator for a WDI R&D mechanical Imagineering target. "
                     "Use only the supplied sources. Do not invent credentials, contacts, referrals, or outcomes. "
-                    "Write Alan-facing strings like a peer-level research/operator readout, not a checklist, "
-                    "homework prompt, motivational page, or reviewer-prep worksheet. Avoid these terms and close "
-                    "variants in displayed strings: proof packet, evidence packet, reviewer-facing, reviewer-visible, "
-                    "reviewer-proof, best evidence, evidence gaps, evidence to create, next evidence, best next move, "
-                    "show-value, source coverage, and what a reviewer can inspect. Prefer neutral terms such as "
-                    "profile, public record, strongest signals, unresolved, current constraint, source depth, "
-                    "measurement table, and motion examples. "
+                    "The user is Alan. Write for him, not for an imaginary reviewer. Do not make him manage AI quality control. "
+                    "The useful output is: where Alan is now, what still separates him from Principal-level WDI R&D, "
+                    "what the system can handle autonomously, and what requires Alan approval. "
+                    "Do not complain about AI-generated pages as if Alan needs to manually fix them. If the issue is page/profile/paper quality, "
+                    "make the next action system-owned. Only person-facing steps, applications, referral asks, or sensitive outreach require Alan approval. "
+                    "Write like a concise senior research/operator readout, not a checklist, homework prompt, motivational page, or reviewer-prep worksheet. "
+                    "Avoid these terms and close variants in displayed strings: proof packet, evidence packet, reviewer-facing, reviewer-visible, "
+                    "reviewer-proof, best evidence, evidence gaps, evidence to create, next evidence, best next move, action items, homework, "
+                    "show-value, source coverage, and what a reviewer can inspect. "
+                    "Prefer short, plain phrases: current state, strongest signal, open signal, system move, Alan gate, source depth, measurement table, motion examples. "
                     "Return strict JSON with keys: verdict, score, top_issue, why_it_matters, "
                     "best_existing_evidence, evidence_gaps, next_actions, packet_edits, reviewer_summary. "
                     "next_actions must be an array of objects with title, body, expected_signal, and source. "
+                    "The first next_actions item must be the best system-owned move unless the only safe next step requires Alan approval. "
                     "Every displayed string must be a complete sentence or complete phrase. Do not end any field "
                     "mid-word, mid-name, or mid-sentence."
                 ),
@@ -930,11 +934,11 @@ class ImagineerSystem:
         return {
             "verdict": "Credible core, not inevitable yet.",
             "score": max(0, min(int(ops.get("fit_score") or 0), 100)),
-            "top_issue": "The profile still needs one hard mechanical validation artifact that connects directly to believable physical interaction.",
+            "top_issue": "Sarrus makes the mechanical case credible; Principal-level ownership is not visible enough yet.",
             "why_it_matters": (
-                "The WDI R&D role asks for hands-on mechanical design, prototype testing, loads, moments, forces, CAD, "
-                "iteration, and collaboration across creative and technical disciplines. The current profile is aligned, "
-                "but the public record should make one mechanism impossible to dismiss."
+                "The WDI outcome gets stronger when three things are obvious at a glance: real mechanism depth, memorable "
+                "physical motion, and principal-level ownership. The first is credible now. The second and third still need "
+                "cleaner public framing and source-backed signals."
             ),
             "best_existing_evidence": [
                 "Sarrus gives the core soft robotics mechanism and physical morphing surface record.",
@@ -942,33 +946,32 @@ class ImagineerSystem:
                 "The profile already targets WDI R&D language instead of a generic academic robotics framing.",
             ],
             "evidence_gaps": [
-                "One compact force/load/travel/stiffness calculation tied to the mechanism.",
-                "One visual before/after prototype iteration that shows testing changed the design.",
-                "One 60-90 second demo or storyboard showing what a guest would see, feel, or believe.",
-                "One explicit SolidWorks/GD&T/manufacturing detail for mechanical design credibility.",
+                "Principal-level ownership is not yet visible through led design reviews, integrated systems, collaborators, budget, schedule, or comparable responsibility.",
+                "The strongest motion example still needs to read as a human-facing physical experience, not only as a robotics result.",
+                "The Sarrus quantitative record still needs cleaner digitized curves, uncertainty, sample count, and test conditions.",
             ],
             "next_actions": [
                 {
-                    "title": "Add one mechanical validation figure.",
-                    "body": "Create a single figure or profile block with Sarrus cell travel, load path, estimated force or stiffness, prototype material/process, and what changed after testing.",
-                    "expected_signal": "The public record shows loads, motion, fabrication, and iteration without asking for missing basics.",
+                    "title": "Convert the latest readout into a cleaner state page.",
+                    "body": "Show Alan where he is, what still separates him from Principal, and what the system is doing automatically. Hide long raw critique lists by default.",
+                    "expected_signal": "The dashboard becomes a decision surface instead of a pile of AI feedback.",
                     "source": source_names or "Live Imagineer state",
                 },
                 {
-                    "title": "Add one guest-facing demo frame.",
-                    "body": "Pair the mechanical figure with one storyboard frame: what the mechanism makes an object do, and why that motion would feel alive, responsive, or surprising.",
-                    "expected_signal": "The work reads as WDI physical interaction R&D, not only soft robotics research.",
-                    "source": "Profile and portfolio sources",
+                    "title": "Make the Disney motion signal clearer.",
+                    "body": "Use Sarrus as the anchor and turn one object-motion sequence into a concise physical-experience story.",
+                    "expected_signal": "The work reads as WDI physical interaction R&D, not only as soft robotics research.",
+                    "source": "Sarrus mechanism and profile sources",
                 },
             ],
             "packet_edits": [
-                "Replace the human review ask with an autonomous AI review contract.",
-                "Add a compact validation block: mechanism, measurement, failure, design change, unresolved data.",
-                "Add one role-fit line that names CAD, loads/forces, prototype fabrication, and test iteration.",
+                "Make Sarrus the primary technical anchor.",
+                "Remove long critique lists from the main dashboard.",
+                "Keep external outreach and applications behind approval.",
             ],
             "reviewer_summary": (
-                "Autonomous fallback review used available live state and public sources. The next compounding move is a "
-                "single mechanical validation artifact, not more positioning text."
+                "Autonomous fallback review used available live state and public sources. The next compounding move is a clearer "
+                "state surface and a stronger Sarrus-to-Disney motion translation, not more raw critique text."
             ),
         }
 
@@ -1348,7 +1351,7 @@ class ImagineerSystem:
                 "portfolio_cap": 2,
                 "daily_cap": 1,
                 "ceiling": 58,
-                "ceiling_reason": "the review loop works, but principal-level human review, source depth, and leadership signals remain weak.",
+                "ceiling_reason": "the review loop works, but visible principal-level ownership and external validation remain weak.",
             },
             "application_packet": {
                 "event_weight": 0.50,
@@ -1425,6 +1428,7 @@ class ImagineerSystem:
                 return generated
 
         key = weakest["key"]
+        review_count = len(state.get("reviews", []))
         actions = {
             "mechanical_depth": {
                 "lane": key,
@@ -1446,9 +1450,13 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Run the autonomous AI reviewer.",
-                "body": "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the top critique into one profile or portfolio improvement.",
-                "why": "The principal north star needs rigorous external-style critique, but the first review loop can be autonomous and repeatable before any human outreach.",
+                "title": "Turn the readout into one system-owned improvement." if review_count else "Run the autonomous AI review.",
+                "body": (
+                    "Use the current readout to update the dashboard, profile, paper, or Sarrus framing without asking Alan to interpret long AI notes."
+                    if review_count
+                    else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
+                ),
+                "why": "The principal north star needs visible ownership, source depth, and clean role calibration. External outreach or applications remain approval-gated.",
             },
             "application_packet": {
                 "lane": key,
@@ -1515,7 +1523,7 @@ class ImagineerSystem:
             "mechanical_depth": "Digitize the Sarrus force, stiffness, and hysteresis curves with uncertainty and test conditions.",
             "creative_prototyping": "Make one prototype iteration visible as a before/after artifact.",
             "physical_experience": "Turn the Sarrus object-manipulation clip into a concise guest-facing motion sequence.",
-            "leadership_network": "Improve public-source depth and prepare any human-review material, but ask before any outreach.",
+            "leadership_network": "Make visible ownership and source depth stronger; ask before any external outreach.",
             "application_packet": "Add the final active-rung profile pieces: demo reel, CV bullets, and role-specific narrative.",
             "paper_system": "Add scheduled runs, evaluation history, and outcome tracking so the loop proves persistence.",
         }
@@ -1523,13 +1531,15 @@ class ImagineerSystem:
 
     def _dimension_label(self, key: str, fallback: str) -> str:
         labels = {
-            "leadership_network": "Review intelligence",
+            "leadership_network": "Principal signal",
+            "application_packet": "Glendale profile",
+            "paper_system": "Autonomous system",
         }
         return labels.get(key, fallback)
 
     def _dimension_target_signal(self, key: str, fallback: str) -> str:
         signals = {
-            "leadership_network": "Repeatable critique, role calibration, public-source depth, and optional approved human escalation.",
+            "leadership_network": "Visible ownership, technical direction, source depth, and approval-gated external validation.",
         }
         return signals.get(key, fallback)
 

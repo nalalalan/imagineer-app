@@ -23,7 +23,7 @@
   <meta property="og:description" content="A live WDI R&amp;D readout for Alan's public AO Labs record, review system, and paper.">
   <meta property="og:url" content="https://imagineer.aolabs.io/">
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260506-inevitable">
 </head>
 <body>
   <main class="shell">
@@ -33,132 +33,104 @@
         <span>Imagineer</span>
       </a>
       <div class="actions">
-        <button id="run-review" type="button">Run review</button>
+        <button id="run-review" type="button">Update readout</button>
         <button id="refresh" type="button">Refresh</button>
         <a class="button-link secondary" href="./profile.html">Profile</a>
         <a class="button-link" href="./imagineer-autonomous-position-system.pdf">PDF</a>
       </div>
     </header>
 
-    <section class="panel report-panel" aria-labelledby="report-title">
-      <div class="report-layout">
-        <div class="report-main">
-          <p class="kicker">AI readout</p>
-          <h1 id="report-title">WDI R&amp;D readout</h1>
-          <p id="report-generated" class="meta-line">Checking the latest autonomous review.</p>
-          <p id="report-verdict" class="verdict">Loading current readout.</p>
-          <p id="report-summary" class="report-summary">The page shows the current AI critique of Alan's public AO Labs record for WDI R&amp;D Imagineering.</p>
+    <section class="panel command-panel" aria-labelledby="current-read">
+      <div class="hero-grid">
+        <div>
+          <p class="kicker">WDI R&amp;D state</p>
+          <h1 id="current-read">Loading the current state.</h1>
+          <p id="why-care" class="readout-copy">The dashboard is checking where Alan is, what still separates him from the Disney target, and what the autonomous system is handling.</p>
         </div>
-        <div class="score-stack" aria-label="Reviewer and fit scores">
-          <div>
-            <span>Review</span>
-            <strong id="report-score">--</strong>
-            <em>AI critique of the current public record. Not a hiring probability.</em>
-          </div>
-          <div>
-            <span>Fit signal</span>
-            <strong id="fit-score">--</strong>
-            <em>Internal readiness across the six role-fit lanes. Not a hiring probability.</em>
-          </div>
-        </div>
+        <aside class="readiness-card" aria-label="Controllable readiness">
+          <span>Controllable readiness</span>
+          <strong id="readiness-score">--</strong>
+          <p id="readiness-caption">Not a hiring probability.</p>
+          <small id="generated-at">checking</small>
+        </aside>
       </div>
 
-      <div class="report-focus">
+      <div class="truth-grid" aria-label="Current state">
         <article>
-          <span>Current constraint</span>
-          <p id="report-top-issue">Waiting for reviewer output.</p>
+          <span>Where I am</span>
+          <strong id="where-now-title">--</strong>
+          <p id="where-now-body">--</p>
         </article>
         <article>
-          <span>Profile update</span>
-          <h2 id="report-action-title">--</h2>
-          <p id="report-action-body">--</p>
-          <small id="report-action-signal">--</small>
-          <small id="report-action-source">--</small>
+          <span>Where it needs to be</span>
+          <strong id="where-needed-title">--</strong>
+          <p id="where-needed-body">--</p>
+        </article>
+        <article>
+          <span>System</span>
+          <strong id="system-owned-title">--</strong>
+          <p id="system-owned-body">--</p>
+        </article>
+        <article>
+          <span>Alan</span>
+          <strong id="alan-gate-title">--</strong>
+          <p id="alan-gate-body">--</p>
         </article>
       </div>
+    </section>
 
-      <div class="report-lists" aria-label="Reviewer feedback lists">
-        <article>
-          <h2>Strongest signals</h2>
-          <ul id="best-evidence"><li>Loading current signals.</li></ul>
-        </article>
-        <article>
-          <h2>Unresolved</h2>
-          <ul id="evidence-gaps"><li>Loading open signals.</li></ul>
-        </article>
-        <article>
-          <h2>Profile updates</h2>
-          <ul id="packet-edits"><li>Loading profile updates.</li></ul>
-        </article>
+    <section class="panel" aria-labelledby="lanes-title">
+      <div class="section-head">
+        <div>
+          <p class="kicker">Signals</p>
+          <h2 id="lanes-title">What changes the outcome</h2>
+        </div>
+        <span>Only the few signals that matter right now.</span>
       </div>
+      <div id="lanes" class="lane-grid"></div>
     </section>
 
     <section class="panel" aria-labelledby="status-title">
       <div class="section-head">
         <div>
           <p class="kicker">System</p>
-          <h2 id="status-title">Review system</h2>
+          <h2 id="status-title">Autonomous loop</h2>
         </div>
-        <span id="updated-at">not loaded</span>
+        <span id="target-role">Principal R&amp;D Imagineer - Mechanical Engineer</span>
       </div>
 
-      <div class="status-grid">
+      <div class="status-grid compact-status">
         <div class="state-row">
           <span>Backend</span>
-          <strong id="backend-state">checking</strong>
-          <em id="backend-detail">--</em>
+          <strong id="system-state">checking</strong>
+          <em id="system-detail">--</em>
         </div>
         <div class="state-row">
-          <span>Review</span>
-          <strong id="reviewer-status">--</strong>
-          <em id="reviewer-detail">--</em>
+          <span>Loop</span>
+          <strong id="system-loop">--</strong>
+          <em id="system-loop-detail">--</em>
         </div>
         <div class="state-row">
           <span>Model</span>
-          <strong id="reviewer-model">--</strong>
-          <em id="reviewer-sources">--</em>
+          <strong id="system-model">--</strong>
+          <em id="system-model-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Progress</span>
+          <strong id="system-progress">--</strong>
+          <em id="system-progress-detail">--</em>
+        </div>
+        <div class="state-row">
+          <span>Boundary</span>
+          <strong id="system-boundary">--</strong>
+          <em id="system-boundary-detail">--</em>
         </div>
         <div class="state-row">
           <span>Target</span>
-          <strong id="target-role">Principal R&amp;D Imagineer - Mechanical Engineer</strong>
-          <em id="target-location">Walt Disney Imagineering R&amp;D / Glendale</em>
-        </div>
-        <div class="state-row">
-          <span>Bottleneck</span>
-          <strong id="bottleneck">--</strong>
-          <em id="bottleneck-detail">--</em>
-        </div>
-        <div class="state-row">
-          <span>Confidence</span>
-          <strong id="confidence">--</strong>
-          <em id="reviewer-scope">--</em>
+          <strong>WDI R&amp;D / Glendale</strong>
+          <em id="target-detail">--</em>
         </div>
       </div>
-
-      <dl class="metrics" aria-label="Counters">
-        <div>
-          <dt>Logged work</dt>
-          <dd id="metric-proof">--</dd>
-        </div>
-        <div>
-          <dt>Daily cycles</dt>
-          <dd id="metric-cycles">--</dd>
-        </div>
-        <div>
-          <dt>AI reviews</dt>
-          <dd id="metric-ai-reviews">--</dd>
-        </div>
-        <div>
-          <dt>Journal</dt>
-          <dd id="metric-journal">--</dd>
-        </div>
-      </dl>
-
-      <section class="signals" aria-labelledby="signals-title">
-        <h2 id="signals-title">Role-fit signals</h2>
-        <p class="signals-note">Calibrated readiness signals, not hiring probabilities. 100 means no known blocker in that lane; anything below 100 still has a specific unresolved signal.</p>
-        <div id="dimensions" class="dimensions"></div>
-      </section>
     </section>
 
     <section class="panel paper-panel" aria-labelledby="paper-title">
@@ -174,6 +146,6 @@
     </section>
   </main>
 
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260506-inevitable"></script>
 </body>
 </html>

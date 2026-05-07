@@ -8,38 +8,42 @@ const fallbackOps = {
   generated_at: new Date().toISOString(),
   target: {
     north_star_title: "Principal R&D Imagineer - Mechanical Engineer",
+    active_rung_title: "WDI Research & Development Imagineer - Mechanical Design Engineer",
     company: "Walt Disney Imagineering R&D",
     location: "Glendale, California"
   },
-  positioning: "Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools for physical interaction systems.",
   fit_score: 58,
   confidence: "fallback",
   current_bottleneck: {
-    label: "Review intelligence",
+    key: "principal_signal",
+    label: "Principal signal",
     score: 34,
-    target_signal: "Repeatable critique, role calibration, public-source depth, and optional approved human escalation.",
-    next_signal: "Run autonomous critique first; use human review only as an approved escalation.",
-    score_basis: "Fallback score because the live backend did not load."
+    target_signal: "Visible ownership, technical direction, and source-backed role calibration.",
+    next_signal: "Reconnect the live system and regenerate the readout."
   },
   next_action: {
-    title: "Run the autonomous AI review.",
-    body: "Pull current role, profile, portfolio, and Disney Research context into one critique loop."
+    title: "Reconnect the live system.",
+    body: "The page is showing fallback state because the backend did not load."
   },
   reviewer: {
     mode: "autonomous_ai",
     model: "gpt-5.5",
     scope: "whole_public_ao_labs_graph",
-    status: "not_run",
+    status: "offline",
     review_count: 0,
     source_count: 0,
-    approval_boundary: "Human approval is required before external outreach or application actions.",
     latest: null
   },
   evidence: {
-    proof_events: 0,
     daily_cycles: 0,
     ai_reviews: 0,
-    journal_entries: 0
+    journal_entries: 0,
+    portfolio_items: 0
+  },
+  active_experiment: {
+    name: "Autonomous career loop",
+    status: "waiting",
+    progress: {}
   },
   weekly_paper: {
     status: "fallback",
@@ -47,15 +51,13 @@ const fallbackOps = {
   },
   dimensions: [
     {
-      key: "review_intelligence",
-      label: "Review intelligence",
-      score: 34,
-      target_signal: "Whether the system can critique the public portfolio against WDI-style mechanical R&D expectations.",
-      next_signal: "Generate a live AI review from current sources.",
-      score_basis: "Static fallback; the live reviewer state was unavailable."
+      key: "mechanical_depth",
+      label: "Mechanical case",
+      score: 58,
+      target_signal: "Real mechanism work, loads, fabrication, measurement, and iteration.",
+      next_signal: "Reconnect the live source graph."
     }
-  ],
-  journal: []
+  ]
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -84,7 +86,7 @@ async function request(path, options = {}) {
 }
 
 async function loadState() {
-  setText("#backend-state", "checking");
+  setText("#system-state", "checking");
   try {
     const ops = await request("/api/imagineer/ops-check");
     render(ops, true);
@@ -96,141 +98,169 @@ async function loadState() {
 async function runReview() {
   const button = $("#run-review");
   button.disabled = true;
-  button.textContent = "Running";
-  setText("#reviewer-status", "running");
-  setText("#reviewer-detail", "collecting public sources and generating critique");
-  setText("#report-generated", "Running the review. This can take about a minute.");
+  button.textContent = "Updating";
+  setText("#system-state", "running");
+  setText("#system-detail", "reading public sources and refreshing the state");
   try {
     const result = await request("/api/imagineer/ai-review/run", { method: "POST", timeout: 210000 });
     render(result.ops || fallbackOps, true);
   } catch {
-    setText("#reviewer-status", "not completed");
-    setText("#reviewer-detail", "the review timed out or returned an error");
-    setText("#report-generated", "The last review did not complete in the browser.");
+    setText("#system-state", "not completed");
+    setText("#system-detail", "the review timed out or returned an error");
   } finally {
     button.disabled = false;
-    button.textContent = "Run review";
+    button.textContent = "Update readout";
   }
 }
 
 function render(ops, connected) {
   const evidence = ops.evidence || {};
-  const bottleneck = ops.current_bottleneck || {};
-  const paper = ops.weekly_paper || {};
   const target = ops.target || {};
   const reviewer = ops.reviewer || {};
   const latestReview = reviewer.latest || {};
-  const reviewerAction = latestReview.next_action || ops.next_action || {};
-  const generatedAt = latestReview.created_at || ops.generated_at || paper.updated_at;
+  const activeExperiment = ops.active_experiment || {};
+  const progress = activeExperiment.progress || {};
+  const generatedAt = latestReview.created_at || ops.generated_at || ops.weekly_paper?.updated_at;
+  const dimensions = ops.dimensions || [];
+  const readiness = Number.isFinite(ops.fit_score) ? ops.fit_score : "--";
+  const mainState = buildReadout(ops, latestReview);
 
-  setText("#backend-state", connected ? "online" : "fallback");
-  $("#backend-state").className = connected ? "is-ok" : "is-warn";
-  setText("#backend-detail", connected ? clean(ops.status) : "static fallback");
-  setText("#fit-score", Number.isFinite(ops.fit_score) ? ops.fit_score : "--");
-  setText("#confidence", clean(ops.confidence));
+  setText("#current-read", mainState.headline);
+  setText("#why-care", mainState.why);
+  setText("#readiness-score", readiness);
+  setText("#readiness-caption", mainState.caption);
+  setText("#generated-at", `updated ${formatDateTime(generatedAt)}`);
+
+  setText("#where-now-title", mainState.whereNowTitle);
+  setText("#where-now-body", mainState.whereNowBody);
+  setText("#where-needed-title", mainState.whereNeededTitle);
+  setText("#where-needed-body", mainState.whereNeededBody);
+  setText("#system-owned-title", mainState.systemOwnedTitle);
+  setText("#system-owned-body", mainState.systemOwnedBody);
+  setText("#alan-gate-title", mainState.alanGateTitle);
+  setText("#alan-gate-body", mainState.alanGateBody);
+
+  setText("#system-state", connected ? "online" : "fallback");
+  $("#system-state").className = connected ? "is-ok" : "is-warn";
+  setText("#system-detail", connected ? systemDetail(ops, reviewer) : "static fallback");
+  setText("#system-loop", activeExperiment.name || "Autonomous career loop");
+  setText("#system-loop-detail", activeExperiment.status || ops.status || "--");
+  setText("#system-model", latestReview.model || reviewer.model || "gpt-5.5");
+  setText("#system-model-detail", `${latestReview.source_count || reviewer.source_count || 0} sources; ${reviewer.review_count || 0} saved reviews`);
+  setText("#system-progress", `${evidence.ai_reviews ?? 0} reviews / ${evidence.daily_cycles ?? 0} cycles`);
+  setText("#system-progress-detail", `${evidence.journal_entries ?? 0} journal entries; ${progress.reviewer_ready_artifacts ?? evidence.portfolio_items ?? 0} public artifacts tracked`);
+  setText("#system-boundary", "external steps gated");
+  setText("#system-boundary-detail", "applications, referral asks, and direct outreach still require approval");
+
   setText("#target-role", target.north_star_title || "Principal R&D Imagineer - Mechanical Engineer");
-  setText("#target-location", `${target.company || "Walt Disney Imagineering R&D"} / ${target.location || "Glendale, California"}`);
-  setText("#bottleneck", bottleneck.label || "--");
-  setText("#bottleneck-detail", bottleneck.target_signal || "--");
-  setText("#reviewer-status", clean(reviewer.status || "not run"));
-  setText("#reviewer-detail", reviewer.approval_boundary || "Autonomous critique only; external action needs approval.");
-  setText("#reviewer-model", latestReview.model || reviewer.model || "--");
-  setText("#reviewer-sources", `${latestReview.source_count || reviewer.source_count || 0} sources; ${reviewer.review_count || 0} saved reviews`);
-  setText("#reviewer-scope", clean(reviewer.scope || "whole_public_ao_labs_graph"));
-  setText("#metric-proof", evidence.proof_events ?? "--");
-  setText("#metric-cycles", evidence.daily_cycles ?? "--");
-  setText("#metric-ai-reviews", evidence.ai_reviews ?? "--");
-  setText("#metric-journal", evidence.journal_entries ?? "--");
-  setText("#updated-at", `updated ${formatDateTime(ops.generated_at || paper.updated_at)}`);
-  setText("#paper-status", "Current PDF.");
+  setText("#target-detail", `${target.company || "Walt Disney Imagineering R&D"} / ${target.location || "Glendale, California"}`);
+  setText("#paper-title", paperName);
+  setText("#paper-status", `PDF is live; weekly system paper updates separately from this dashboard.`);
 
-  renderReviewerReport(latestReview, reviewerAction, generatedAt);
-  renderDimensions(ops.dimensions || []);
+  renderLanes(dimensions);
 }
 
-function renderReviewerReport(latestReview, action, generatedAt) {
-  if (!latestReview || !latestReview.id) {
-    setText("#report-score", "--");
-    setText("#report-generated", "No AI review has been generated yet.");
-    setText("#report-verdict", "Run the review to generate the first report.");
-    setText("#report-summary", "The report will read the public AO Labs record, compare it against WDI R&D mechanical Imagineering signals, and return the most useful critique.");
-    setText("#report-top-issue", "Waiting for review output.");
-    setText("#report-action-title", action.title || "--");
-    setText("#report-action-body", action.body || "--");
-    setText("#report-action-signal", action.expected_signal || action.why || "--");
-    setText("#report-action-source", action.source || "--");
-    setList("#best-evidence", []);
-    setList("#evidence-gaps", []);
-    setList("#packet-edits", []);
-    return;
-  }
+function buildReadout(ops, latestReview) {
+  const fit = Number(ops.fit_score) || 0;
+  const mechanical = findDimension(ops, "mechanical_depth");
+  const physical = findDimension(ops, "physical_experience");
+  const principal = findDimension(ops, "leadership_network") || ops.current_bottleneck || {};
+  const packet = findDimension(ops, "application_packet");
+  const paper = findDimension(ops, "paper_system");
+  const latestText = latestReview?.reviewer_summary || latestReview?.why_it_matters || "";
+  const credible = fit >= 70;
 
-  setText("#report-score", Number.isFinite(latestReview.score) ? latestReview.score : "--");
-  setText("#report-generated", `generated ${formatDateTime(generatedAt)} by ${latestReview.model || "AI reviewer"}`);
-  setText("#report-verdict", latestReview.verdict || "Review generated a report.");
-  setText("#report-summary", reviewerSummary(latestReview, action));
-  setText("#report-top-issue", latestReview.top_issue || "No top issue returned.");
-  setText("#report-action-title", action.title || "No action returned");
-  setText("#report-action-body", action.body || "--");
-  setText("#report-action-signal", action.expected_signal ? `Expected signal: ${action.expected_signal}` : "--");
-  setText("#report-action-source", action.source ? `Source: ${action.source}` : "--");
-  setList("#best-evidence", latestReview.best_existing_evidence || []);
-  setList("#evidence-gaps", latestReview.evidence_gaps || []);
-  setList("#packet-edits", latestReview.packet_edits || []);
+  return {
+    headline: credible
+      ? "Credible for WDI R&D mechanical design. Principal signal is the active gap."
+      : "Promising technical base. Principal signal is still thin.",
+    why: (
+      "The Disney outcome gets stronger when three things are obvious at a glance: real mechanism depth, memorable physical motion, and principal-level ownership. "
+      + "Sarrus carries the mechanical case. The system is now supposed to turn that into a cleaner Disney-facing trajectory instead of making you read long notes."
+    ),
+    caption: "Controllable readiness. Not a hiring probability.",
+    whereNowTitle: "Sarrus makes the case credible.",
+    whereNowBody: `Mechanical depth is ${scoreText(mechanical)}. The public record now shows mechanism geometry, pneumatic actuation, modular assembly, measured behavior, and motion examples.`,
+    whereNeededTitle: "Principal scope is the real gap.",
+    whereNeededBody: `Principal signal is ${scoreText(principal)}. Disney still needs to see ownership: technical direction, integrated systems, design-review leadership, collaborators, or comparable responsibility.`,
+    systemOwnedTitle: "The app should keep moving without you.",
+    systemOwnedBody: `It can re-read AO Labs, score the lanes, update this dashboard, update the profile/paper, and log what changed. It should not ask you to interpret long AI notes.`,
+    alanGateTitle: "Your gate is only external action.",
+    alanGateBody: "You should only need to approve applications, referral asks, direct outreach, or anything that represents you to a person. Everything else is system work.",
+    latestText,
+    mechanical,
+    physical,
+    principal,
+    packet,
+    paper
+  };
 }
 
-function renderDimensions(dimensions) {
-  $("#dimensions").innerHTML = dimensions.length
-    ? dimensions.map((dimension) => {
-      const score = Math.max(0, Math.min(Number(dimension.score) || 0, 100));
-      return `
-        <article class="dimension-card">
-          <div class="dimension-top">
-            <strong>${escapeHtml(dimension.label || dimension.key)}</strong>
-            <span>${score}</span>
-          </div>
-          <div class="bar" aria-hidden="true"><i style="--score:${score}%"></i></div>
-          <p><b>Tracks</b> ${escapeHtml(clean(dimension.target_signal || "No measurement target supplied."))}</p>
-          <p><b>Basis</b> ${escapeHtml(clean(dimension.score_basis || "Score basis will appear after the backend update deploys."))}</p>
-          <p><b>Unresolved</b> ${escapeHtml(clean(dimension.next_signal || "No unresolved signal supplied."))}</p>
-        </article>
-      `;
-    }).join("")
-    : `<article class="dimension-card"><div class="dimension-top"><strong>No live dimensions</strong><span>--</span></div><p>Backend not loaded.</p></article>`;
+function renderLanes(dimensions) {
+  const laneSpecs = [
+    {
+      key: "mechanical_depth",
+      title: "Mechanical case",
+      why: "This is why WDI should take the work seriously.",
+      now: "Sarrus is the anchor: mechanism geometry, actuation path, build state, and measured behavior.",
+      system: "Keep Sarrus primary, keep figures current, and make measurements easier to inspect."
+    },
+    {
+      key: "physical_experience",
+      title: "Disney motion",
+      why: "This is what turns robotics into Imagineering.",
+      now: "The motion exists: surface waves, object manipulation, crawling, and rolling.",
+      system: "Translate one motion sequence into a short, human-facing story: what someone sees, feels, or believes."
+    },
+    {
+      key: "leadership_network",
+      title: "Principal signal",
+      why: "This is the difference between credible candidate and principal-level hire.",
+      now: "The weak part is visible ownership, technical direction, and external validation.",
+      system: "Mine the public record for leadership signals, prepare clean source-backed framing, and wait for approval before any person-facing step."
+    }
+  ];
+
+  $("#lanes").innerHTML = laneSpecs.map((lane) => {
+    const dimension = findDimension({ dimensions }, lane.key) || {};
+    const score = Math.max(0, Math.min(Number(dimension.score) || 0, 100));
+    const state = score >= 82 ? "strong" : score >= 68 ? "building" : "thin";
+    return `
+      <article class="lane-card ${state}">
+        <div class="lane-top">
+          <span>${escapeHtml(lane.title)}</span>
+          <strong>${score || "--"}</strong>
+        </div>
+        <div class="bar" aria-hidden="true"><i style="--score:${score}%"></i></div>
+        <p>${escapeHtml(lane.why)}</p>
+        <dl>
+          <div><dt>Current</dt><dd>${escapeHtml(lane.now)}</dd></div>
+          <div><dt>System</dt><dd>${escapeHtml(lane.system)}</dd></div>
+        </dl>
+      </article>
+    `;
+  }).join("");
 }
 
-function setList(selector, items) {
-  const node = $(selector);
-  if (!node) return;
-  const cleanItems = Array.isArray(items) ? items.filter(Boolean) : [];
-  node.innerHTML = cleanItems.length
-    ? cleanItems.map((item) => `<li>${escapeHtml(clean(item))}</li>`).join("")
-    : `<li>Not returned in the latest review.</li>`;
+function findDimension(ops, key) {
+  return (ops.dimensions || []).find((dimension) => dimension.key === key);
 }
 
-function reviewerSummary(latestReview, action) {
-  const raw = latestReview.reviewer_summary || latestReview.why_it_matters || "The review generated a critique from the public source graph.";
-  const cleaned = removeDanglingNextMove(raw);
-  if (cleaned) return cleaned;
-  if (action && action.title && action.body) return `${action.title} ${action.body}`;
-  return "The review generated a critique from the public source graph.";
+function scoreText(dimension) {
+  if (!dimension || !Number.isFinite(Number(dimension.score))) return "not loaded";
+  return `${dimension.score}/100`;
 }
 
-function removeDanglingNextMove(value) {
-  let text = clean(value);
-  text = text.replace(/\s+The best next move is to\s*$/i, "");
-  text = text.replace(/\s+The selected next move is to\s*$/i, "");
-  if (/[.!?]$/.test(text)) return text;
-  const lastStop = Math.max(text.lastIndexOf("."), text.lastIndexOf("!"), text.lastIndexOf("?"));
-  if (lastStop > 80) return text.slice(0, lastStop + 1);
-  return text;
+function systemDetail(ops, reviewer) {
+  const status = clean(ops.status || "running");
+  const count = reviewer.review_count || 0;
+  if (count > 0) return `${status}; ${count} system readouts saved`;
+  return status;
 }
 
 function clean(value) {
   let text = String(value || "--").replaceAll("_", " ");
   const replacements = [
-    ["Sarrus mechanism proof", "Sarrus mechanism"],
-    ["mechanism proof", "mechanism record"],
     ["proof packet", "profile"],
     ["Proof packet", "Profile"],
     ["evidence packet", "profile"],
@@ -239,30 +269,28 @@ function clean(value) {
     ["Reviewer-facing", "Public"],
     ["reviewer-visible", "public"],
     ["Reviewer-visible", "Public"],
-    ["reviewer-proof", "source-backed"],
-    ["Reviewer-proof", "Source-backed"],
-    ["best evidence", "strongest signals"],
-    ["Best evidence", "Strongest signals"],
-    ["evidence gaps", "unresolved signals"],
-    ["Evidence gaps", "Unresolved signals"],
-    ["evidence to create", "unresolved"],
-    ["Evidence to create", "Unresolved"],
-    ["next evidence", "unresolved signal"],
-    ["Next evidence", "Unresolved signal"],
-    ["best next move", "current constraint"],
-    ["Best next move", "Current constraint"],
+    ["Autonomous AI reviewer", "Autonomous career loop"],
+    ["autonomous AI reviewer", "autonomous career loop"],
+    ["AI reviewer", "career signal loop"],
+    ["ai reviewer", "career signal loop"],
+    ["best evidence", "current signal"],
+    ["Best evidence", "Current signal"],
+    ["evidence gaps", "open signals"],
+    ["Evidence gaps", "Open signals"],
+    ["evidence to create", "open signal"],
+    ["Evidence to create", "Open signal"],
+    ["next evidence", "open signal"],
+    ["Next evidence", "Open signal"],
+    ["best next move", "current state"],
+    ["Best next move", "Current state"],
     ["show-value", "motion"],
     ["Show-value", "Motion"],
     ["source coverage", "source depth"],
     ["Source coverage", "Source depth"],
-    ["what a reviewer can inspect", "public sources"],
-    ["What a reviewer can inspect", "Public sources"],
     ["packet", "profile"],
     ["Packet", "Profile"]
   ];
-  for (const [from, to] of replacements) {
-    text = text.replaceAll(from, to);
-  }
+  for (const [from, to] of replacements) text = text.replaceAll(from, to);
   return text;
 }
 
