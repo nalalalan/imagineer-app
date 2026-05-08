@@ -130,11 +130,14 @@ button:disabled {
 .button-link.ao-home {
   width: 38px;
   padding: 0;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
 }
 
 .button-link.ao-home img {
-  width: 22px;
-  height: 22px;
+  width: 31px;
+  height: 31px;
   display: block;
 }
 
