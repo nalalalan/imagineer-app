@@ -1,44 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="6 6 116 116" role="img" aria-label="Imagineer icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="20 18 96 94" role="img" aria-label="Imagineer icon">
   <defs>
-    <filter id="d" x="-35%" y="-35%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="10" stdDeviation="6" flood-color="#2b211d" flood-opacity=".15"/>
+    <filter id="d" x="-35%" y="-35%" width="170%" height="170%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="6" flood-color="#2b211d" flood-opacity=".14"/>
       <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#fffaf4" flood-opacity=".5"/>
     </filter>
-    <linearGradient id="blue" x1="16" y1="18" x2="108" y2="112">
-      <stop stop-color="#91a9c8"/>
-      <stop offset=".58" stop-color="#5f7fa5"/>
-      <stop offset="1" stop-color="#344d73"/>
+    <linearGradient id="blue" x1="18" y1="18" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9fb1cc"/>
+      <stop offset=".58" stop-color="#6d86aa"/>
+      <stop offset="1" stop-color="#465c80"/>
     </linearGradient>
-    <linearGradient id="gold" x1="20" y1="16" x2="108" y2="112">
-      <stop stop-color="#f0cb71"/>
-      <stop offset=".58" stop-color="#c58c42"/>
-      <stop offset="1" stop-color="#8a5e2f"/>
+    <linearGradient id="gold" x1="18" y1="14" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f3d77a"/>
+      <stop offset=".58" stop-color="#cf9b47"/>
+      <stop offset="1" stop-color="#9b6936"/>
     </linearGradient>
-    <linearGradient id="teal" x1="18" y1="20" x2="108" y2="112">
-      <stop stop-color="#8db1a6"/>
-      <stop offset=".56" stop-color="#5d877f"/>
-      <stop offset="1" stop-color="#3b625e"/>
+    <linearGradient id="teal" x1="16" y1="20" x2="112" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9cb9af"/>
+      <stop offset=".56" stop-color="#6b928a"/>
+      <stop offset="1" stop-color="#426762"/>
     </linearGradient>
-    <linearGradient id="clay" x1="18" y1="18" x2="108" y2="114">
-      <stop stop-color="#dfa08f"/>
-      <stop offset=".55" stop-color="#bf765f"/>
-      <stop offset="1" stop-color="#895544"/>
+    <linearGradient id="clay" x1="18" y1="18" x2="110" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e0a092"/>
+      <stop offset=".56" stop-color="#bf7764"/>
+      <stop offset="1" stop-color="#8d594a"/>
     </linearGradient>
-    <linearGradient id="line" x1="18" y1="14" x2="108" y2="116">
-      <stop stop-color="#786755"/>
-      <stop offset="1" stop-color="#4c4035"/>
+    <linearGradient id="stone" x1="24" y1="24" x2="106" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff7ee"/>
+      <stop offset="1" stop-color="#e7dac8"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="24" y1="20" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#756555"/>
+      <stop offset="1" stop-color="#4f453a"/>
     </linearGradient>
   </defs>
   <g filter="url(#d)">
-    <path d="M31 91c21-24 51-31 82-16" fill="none" stroke="url(#blue)" stroke-width="8" stroke-linecap="round"/>
-    <path d="M35 100c24-11 50-12 75-2" fill="none" stroke="url(#teal)" stroke-width="5.5" stroke-linecap="round"/>
-    <path d="M64 36 44 94" fill="none" stroke="url(#line)" stroke-width="7" stroke-linecap="round"/>
-    <path d="M67 36 89 92" fill="none" stroke="url(#clay)" stroke-width="7" stroke-linecap="round"/>
-    <circle cx="66" cy="37" r="9" fill="url(#gold)"/>
-    <circle cx="66" cy="37" r="4" fill="#fff8ef"/>
-    <path d="M86 19 92 34 107 40 92 46 86 62 80 46 65 40 80 34z" fill="url(#gold)"/>
-    <path d="M86 31 89 38 96 40 89 43 86 50 83 43 76 40 83 38z" fill="#fff8ef" opacity=".78"/>
-    <circle cx="31" cy="91" r="5.2" fill="url(#gold)"/>
-    <circle cx="113" cy="75" r="5.2" fill="url(#teal)"/>
+    <path d="M31 95c20-11 47-14 74-6" fill="none" stroke="url(#teal)" stroke-width="6.5" stroke-linecap="round"/>
+    <path d="M27 101c25 5 58 4 84-5" fill="none" stroke="#d9c9b5" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M40 88V58h13V47l9 8 9-8v11h17v30Z" fill="url(#stone)"/>
+    <rect x="34" y="66" width="18" height="22" rx="4" fill="url(#blue)"/>
+    <rect x="76" y="66" width="18" height="22" rx="4" fill="url(#clay)"/>
+    <path d="M37 63 43 49l7 14ZM79 63l7-14 7 14Z" fill="url(#gold)"/>
+    <path d="M55 88V67c0-8 5-14 12-14s12 6 12 14v21Z" fill="url(#ink)"/>
+    <path d="M62 88V68c0-4 2-7 5-7s5 3 5 7v20Z" fill="#fff5eb" opacity=".92"/>
+    <path d="M67 28 73 43 88 49 73 55 67 71 61 55 46 49 61 43Z" fill="url(#gold)"/>
+    <path d="M67 41 70 48 77 50 70 53 67 60 64 53 57 50 64 48Z" fill="#fff8ef" opacity=".82"/>
+    <circle cx="31" cy="95" r="5.2" fill="url(#gold)"/>
+    <circle cx="105" cy="89" r="5.2" fill="url(#teal)"/>
   </g>
 </svg>
