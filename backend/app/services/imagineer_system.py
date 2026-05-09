@@ -18,6 +18,7 @@ POSITIONING_LINE = (
     "Mechanical PhD + soft robotics + creative prototyping + AI-assisted tools "
     "for physical interaction systems."
 )
+PROFILE_UPDATED_AT = "2026-05-09T16:06:25+00:00"
 
 
 def _utc_now() -> str:
@@ -41,6 +42,18 @@ DEFAULT_STATE: dict[str, Any] = {
         "north_star_note": "Use the principal title as the north-star profile; verify any open principal posting before applying.",
     },
     "positioning": POSITIONING_LINE,
+    "profile_record": {
+        "updated_at": PROFILE_UPDATED_AT,
+        "scope": "whole_public_ao_labs_graph",
+        "basis": (
+            "AO Labs home, CV, public project surfaces, papers, dashboards, progress ledger, "
+            "review state, and role-specific profile."
+        ),
+        "source_policy": (
+            "General AO Labs work counts as profile context; role-fit credit stays bounded by "
+            "direct relevance to mechanical R&D, physical interaction, prototypes, systems, and principal-scope ownership."
+        ),
+    },
     "guardrails": [
         "No fabricated credentials, projects, relationships, recommendations, or outcomes.",
         "No spam or fake outreach. Human approval is required before applications, direct referrals, sensitive messages, or external requests.",
@@ -61,8 +74,14 @@ DEFAULT_STATE: dict[str, Any] = {
             "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf",
             "https://sarrus.aolabs.io",
             "https://sarrus.aolabs.io/mechanism.html",
+            "https://sarrus.aolabs.io/paper/",
             "https://fluxcell.aolabs.io",
             "https://relay.aolabs.io",
+            "https://relaylive.aolabs.io",
+            "https://progress.aolabs.io",
+            "https://progress.aolabs.io/api/progress/summary",
+            "https://curtis.aolabs.io",
+            "https://curtis.aolabs.io/paper",
             "https://ocean.aolabs.io",
             "https://talk.aolabs.io",
             "https://nerve.aolabs.io",
@@ -272,6 +291,7 @@ class ImagineerSystem:
             "portfolio": state["portfolio"],
             "journal": state["journal"][:8],
             "guardrails": state["guardrails"],
+            "profile": self._profile_view(state),
             "paper": self.paper_outline(compact=True),
             "weekly_paper": self.weekly_paper(compact=True),
             "artifacts": {
@@ -405,6 +425,7 @@ class ImagineerSystem:
             state["events"].insert(0, event)
             state["events"] = state["events"][:300]
             self._append_journal_from_event(state, event)
+            self._touch_profile_record(state, review["created_at"], source_count=len(sources))
             self._save_state(state)
             return {"ok": True, "review": review, "ops": self.ops_check()}
 
@@ -429,6 +450,7 @@ class ImagineerSystem:
                 },
             )
             state["journal"] = state["journal"][:120]
+            self._touch_profile_record(state, paper["updated_at"])
             self._save_state(state)
             return {"ok": True, "paper": paper, "ops": self.ops_check()}
 
@@ -439,6 +461,7 @@ class ImagineerSystem:
             state["events"].insert(0, event)
             state["events"] = state["events"][:300]
             self._append_journal_from_event(state, event)
+            self._touch_profile_record(state, event["created_at"])
             self._save_state(state)
             return {"ok": True, "event": event, "ops": self.ops_check()}
 
@@ -491,6 +514,7 @@ class ImagineerSystem:
                 },
             )
             state["journal"] = state["journal"][:120]
+            self._touch_profile_record(state, event["created_at"])
             self._save_state(state)
             return {"ok": True, "already_ran": False, "event": event, "next_action": action, "ops": self.ops_check()}
 
@@ -595,6 +619,7 @@ class ImagineerSystem:
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
+            "profile": self._profile_view(state),
             "evidence": {
                 "proof_events": len(proof_events),
                 "outreach_events": len(outreach_events),
@@ -606,6 +631,64 @@ class ImagineerSystem:
             },
         }
 
+    def _profile_view(self, state: dict[str, Any]) -> dict[str, Any]:
+        profile = state.get("profile_record") if isinstance(state.get("profile_record"), dict) else {}
+        latest_review = next(iter(state.get("reviews", [])), None)
+        source_count = self._profile_source_count(state)
+        recorded_source_count = int(profile.get("source_count") or 0)
+        latest_source_count = 0
+        if isinstance(latest_review, dict):
+            latest_source_count = int(latest_review.get("source_count") or 0)
+        updated_at = self._latest_profile_timestamp(state)
+        return {
+            "updated_at": updated_at,
+            "latest_review_at": latest_review.get("created_at") if isinstance(latest_review, dict) else None,
+            "source_count": max(source_count, latest_source_count, recorded_source_count),
+            "scope": profile.get("scope") or "whole_public_ao_labs_graph",
+            "basis": profile.get("basis") or DEFAULT_STATE["profile_record"]["basis"],
+            "source_policy": profile.get("source_policy") or DEFAULT_STATE["profile_record"]["source_policy"],
+        }
+
+    def _profile_source_count(self, state: dict[str, Any]) -> int:
+        reviewer_urls = state.get("reviewer", {}).get("source_urls", [])
+        portfolio_urls = [item.get("url") for item in state.get("portfolio", []) if isinstance(item, dict) and item.get("url")]
+        urls = [str(url).strip() for url in [*reviewer_urls, *portfolio_urls] if str(url).strip()]
+        return len(set(urls))
+
+    def _latest_profile_timestamp(self, state: dict[str, Any]) -> str:
+        candidates = [
+            state.get("profile_record", {}).get("updated_at") if isinstance(state.get("profile_record"), dict) else "",
+        ]
+        for collection in ("reviews", "events", "journal"):
+            items = state.get(collection, [])
+            if isinstance(items, list) and items:
+                first = items[0]
+                if isinstance(first, dict):
+                    candidates.append(str(first.get("created_at") or ""))
+
+        parsed: list[datetime] = []
+        for value in candidates:
+            try:
+                text = str(value or "").replace("Z", "+00:00")
+                item = datetime.fromisoformat(text)
+            except (TypeError, ValueError):
+                continue
+            if item.tzinfo is None:
+                item = item.replace(tzinfo=timezone.utc)
+            parsed.append(item.astimezone(timezone.utc))
+        if not parsed:
+            return PROFILE_UPDATED_AT
+        return max(parsed).isoformat()
+
+    def _touch_profile_record(self, state: dict[str, Any], updated_at: str, *, source_count: int | None = None) -> None:
+        profile = state.get("profile_record")
+        if not isinstance(profile, dict):
+            profile = copy.deepcopy(DEFAULT_STATE["profile_record"])
+            state["profile_record"] = profile
+        profile["updated_at"] = updated_at
+        if source_count is not None:
+            profile["source_count"] = max(int(profile.get("source_count") or 0), source_count)
+
     def _reviewer_report_from_state(self, state: dict[str, Any], compact: bool = False) -> dict[str, Any]:
         latest = next(iter(state.get("reviews", [])), None)
         report = {
@@ -615,7 +698,7 @@ class ImagineerSystem:
             "approval_boundary": state.get("reviewer", {}).get("approval_boundary", ""),
             "latest": self._compact_review(latest) if latest else None,
             "review_count": len(state.get("reviews", [])),
-            "source_count": len(state.get("reviewer", {}).get("source_urls", [])),
+            "source_count": self._profile_source_count(state),
         }
         if compact:
             return report
@@ -671,6 +754,7 @@ class ImagineerSystem:
             "next_action": ops["next_action"],
             "active_experiment": ops["active_experiment"],
             "dimensions": ops["dimensions"],
+            "profile": ops.get("profile") or self._profile_view(state),
             "portfolio": state["portfolio"],
             "identity_profile": state.get("identity_profile", {}),
             "recent_journal": state["journal"][:8],
@@ -703,7 +787,7 @@ class ImagineerSystem:
                 continue
             seen.add(clean_url)
             sources.append(self._fetch_url_source(clean_url))
-        return sources[:28]
+        return sources[:44]
 
     def _discover_aolabs_links(self) -> list[str]:
         try:
@@ -789,8 +873,14 @@ class ImagineerSystem:
             return "Sarrus portfolio"
         if "fluxcell.aolabs.io" in lowered:
             return "FluxCell portfolio"
+        if "relaylive.aolabs.io" in lowered:
+            return "Relay Live dashboard"
         if "relay.aolabs.io" in lowered:
             return "Relay dashboard"
+        if "progress.aolabs.io" in lowered:
+            return "AO Labs progress ledger"
+        if "curtis.aolabs.io" in lowered:
+            return "Curtis practice system"
         if "ocean.aolabs.io" in lowered:
             return "Ocean portfolio"
         if "talk.aolabs.io" in lowered:
@@ -1184,6 +1274,10 @@ class ImagineerSystem:
             default_reviewer.get("source_urls", []),
             existing_reviewer.get("source_urls", []),
         )
+        existing_profile = state.get("profile_record", {})
+        if not isinstance(existing_profile, dict):
+            existing_profile = {}
+        merged["profile_record"] = {**copy.deepcopy(DEFAULT_STATE["profile_record"]), **existing_profile}
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
         return merged

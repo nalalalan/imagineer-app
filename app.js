@@ -49,6 +49,12 @@ const fallbackOps = {
     status: "fallback",
     updated_at: new Date().toISOString()
   },
+  profile: {
+    updated_at: new Date().toISOString(),
+    source_count: 0,
+    scope: "whole_public_ao_labs_graph",
+    source_policy: "General AO Labs work counts as profile context; role-fit credit stays bounded by direct relevance."
+  },
   dimensions: [
     {
       key: "mechanical_depth",
@@ -118,9 +124,10 @@ function render(ops, connected) {
   const target = ops.target || {};
   const reviewer = ops.reviewer || {};
   const latestReview = reviewer.latest || {};
+  const profile = ops.profile || {};
   const activeExperiment = ops.active_experiment || {};
   const progress = activeExperiment.progress || {};
-  const generatedAt = latestReview.created_at || ops.generated_at || ops.weekly_paper?.updated_at;
+  const profileUpdatedAt = profile.updated_at || latestReview.created_at || ops.weekly_paper?.updated_at || ops.generated_at;
   const dimensions = ops.dimensions || [];
   const readiness = Number.isFinite(ops.fit_score) ? ops.fit_score : "--";
   const mainState = buildReadout(ops, latestReview);
@@ -129,7 +136,7 @@ function render(ops, connected) {
   setText("#why-care", mainState.why);
   setText("#readiness-score", readiness);
   setText("#readiness-caption", mainState.caption);
-  setText("#generated-at", `updated ${formatDateTime(generatedAt)}`);
+  setText("#generated-at", `profile updated ${formatDateTime(profileUpdatedAt)}`);
 
   setText("#where-now-title", mainState.whereNowTitle);
   setText("#where-now-body", mainState.whereNowBody);
@@ -146,7 +153,7 @@ function render(ops, connected) {
   setText("#system-loop", activeExperiment.name || "Autonomous career loop");
   setText("#system-loop-detail", activeExperiment.status || ops.status || "--");
   setText("#system-model", latestReview.model || reviewer.model || "gpt-5.5");
-  setText("#system-model-detail", `${latestReview.source_count || reviewer.source_count || 0} sources; ${reviewer.review_count || 0} saved reviews`);
+  setText("#system-model-detail", `${profile.source_count || latestReview.source_count || reviewer.source_count || 0} sources; ${reviewer.review_count || 0} saved reviews`);
   setText("#system-progress", `${evidence.ai_reviews ?? 0} reviews / ${evidence.daily_cycles ?? 0} cycles`);
   setText("#system-progress-detail", `${evidence.journal_entries ?? 0} journal entries; ${progress.reviewer_ready_artifacts ?? evidence.portfolio_items ?? 0} public artifacts tracked`);
   setText("#system-boundary", "external steps gated");
@@ -172,16 +179,16 @@ function buildReadout(ops, latestReview) {
 
   return {
     headline: credible
-      ? "Credible for WDI R&D mechanical design. Principal signal is the active gap."
-      : "Promising technical base. Principal signal is still thin.",
-    why: "Sarrus: mechanism depth. Active gap: principal-scope ownership.",
+      ? "Credible WDI R&D mechanical signal. Principal signal active gap."
+      : "Promising technical base. Principal signal thin.",
+    why: "Sarrus anchors mechanics. AO Labs tracks range and persistence. Principal signal remains active gap.",
     caption: "Controllable readiness. Not a hiring probability.",
     whereNowTitle: scoreText(mechanical),
     whereNowBody: "geometry / actuation / assembly / measurement / motion",
     whereNeededTitle: scoreText(principal),
     whereNeededBody: "ownership / technical direction / collaborators / validation",
-    systemOwnedTitle: `${latestReview.source_count || ops.reviewer?.source_count || 0} sources`,
-    systemOwnedBody: "AO Labs read / lane scores / profile / paper / logs",
+    systemOwnedTitle: `${ops.profile?.source_count || latestReview.source_count || ops.reviewer?.source_count || 0} sources`,
+    systemOwnedBody: "AO Labs graph / lane scores / profile / paper / logs",
     alanGateTitle: "approval",
     alanGateBody: "applications / referrals / direct outreach / person-facing claims",
     latestText,
