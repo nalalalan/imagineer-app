@@ -261,8 +261,9 @@ class ImagineerSystem:
         state = self._load_state()
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
+        step_decision = self._step_decision(state, dimensions, weakest)
         next_action = self._next_action(state, weakest)
-        personal_step = self._personal_step(state, weakest)
+        personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
@@ -282,6 +283,7 @@ class ImagineerSystem:
             "current_bottleneck": weakest,
             "next_action": next_action,
             "personal_step": personal_step,
+            "decision_system": step_decision["system"],
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
@@ -357,7 +359,7 @@ class ImagineerSystem:
             },
             {
                 "title": "Decision Policy",
-                "claim": "Actions are chosen by the weakest verified role-fit signal, with optional language-model planning constrained by sources and ethics.",
+                "claim": "Actions are chosen by failure-cost evidence ROI: role alignment, bottleneck relief, evidence created, compounding value, urgency, friction, and approval-gate penalty.",
             },
             {
                 "title": "Evaluation",
@@ -552,8 +554,9 @@ class ImagineerSystem:
             {
                 "heading": "Methods Update",
                 "body": (
-                    "The system scores six role-fit dimensions, selects the weakest verified signal, records logged work, "
-                    "runs daily cycles, and maintains a research journal. OpenAI planning is used only when configured; "
+                    "The system scores six role-fit dimensions, then selects the next step by failure-cost evidence ROI: "
+                    "role alignment, bottleneck relief, current evidence created, compounding value, urgency, friction, and approval-gate penalty. "
+                    "It records logged work, runs daily cycles, and maintains a research journal. OpenAI planning is used only when configured; "
                     "otherwise the local deterministic policy chooses the next ethical action."
                 ),
             },
@@ -607,8 +610,9 @@ class ImagineerSystem:
     def ops_check_without_weekly(self, state: dict[str, Any]) -> dict[str, Any]:
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
+        step_decision = self._step_decision(state, dimensions, weakest)
         next_action = self._next_action(state, weakest)
-        personal_step = self._personal_step(state, weakest)
+        personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
@@ -624,6 +628,7 @@ class ImagineerSystem:
             "current_bottleneck": weakest,
             "next_action": next_action,
             "personal_step": personal_step,
+            "decision_system": step_decision["system"],
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
@@ -1520,16 +1525,167 @@ class ImagineerSystem:
         }
         return {**experiment, "started_at": start, "progress": progress}
 
-    def _personal_step(self, state: dict[str, Any], weakest: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "lane": weakest["key"],
-            "title": "Set the next FluxCell test.",
-            "body": "Write: motion target, hardware change, pass/fail metric.",
-            "time": "5 minutes",
-            "href": "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
-            "source": "Imagineer state plus Progress source graph.",
-            "why": "Sarrus complete. Current technical direction: FluxCell.",
+    def _step_decision(
+        self,
+        state: dict[str, Any],
+        dimensions: list[dict[str, Any]],
+        weakest: dict[str, Any],
+    ) -> dict[str, Any]:
+        candidates = self._step_candidates(state, dimensions, weakest)
+        selected = max(candidates, key=lambda item: item["score"])
+        step = {
+            "lane": selected["lane"],
+            "title": selected["title"],
+            "body": selected["body"],
+            "why": selected["why"],
+            "time": selected["time"],
+            "href": selected["href"],
+            "source": (
+                f"Principal signal {self._dimension_score(dimensions, 'leadership_network')}/100. "
+                f"Decision score {selected['score']}/100."
+            ),
+            "urgency": selected["urgency"],
+            "decision_score": selected["score"],
+            "decision_id": selected["id"],
         }
+        return {
+            "step": step,
+            "system": {
+                "name": "failure-cost evidence ROI",
+                "policy": (
+                    "Select the lowest-friction action that creates current, inspectable evidence "
+                    "against the weakest Disney-relevant signal while avoiding approval-gated external action."
+                ),
+                "selected_id": selected["id"],
+                "selected_score": selected["score"],
+                "current_bottleneck": weakest["key"],
+                "inputs": [
+                    "active WDI mechanical design listing",
+                    "principal-scope north star",
+                    "role-fit dimension scores",
+                    "AO Labs public-source graph",
+                    "approval boundary",
+                ],
+                "candidates": candidates,
+            },
+        }
+
+    def _step_candidates(
+        self,
+        state: dict[str, Any],
+        dimensions: list[dict[str, Any]],
+        weakest: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        phd_doc = "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit"
+        candidates = [
+            {
+                "id": "lock-fluxcell-experiment",
+                "lane": "leadership_network",
+                "title": "Lock one FluxCell experiment today.",
+                "body": "Motion target, hardware change, measurement, first build date.",
+                "why": (
+                    "If this stays undefined, the Disney case stays past-tense: strong Sarrus paper, "
+                    "weak current R&D ownership."
+                ),
+                "time": "7 minutes",
+                "href": phd_doc,
+                "urgency": "current ownership is the live failure point",
+                "role_alignment": 24,
+                "bottleneck_relief": 24,
+                "evidence_created": 22,
+                "compounding": 16,
+                "urgency_score": 13,
+                "friction": 6,
+                "gate_penalty": 0,
+            },
+            {
+                "id": "update-sarrus-again",
+                "lane": "mechanical_depth",
+                "title": "Polish Sarrus again.",
+                "body": "Make another Sarrus note or explanation.",
+                "why": "Low return now. Sarrus is already the completed anchor.",
+                "time": "20 minutes",
+                "href": "https://sarrus.aolabs.io",
+                "urgency": "low",
+                "role_alignment": 9,
+                "bottleneck_relief": 2,
+                "evidence_created": 3,
+                "compounding": 3,
+                "urgency_score": 0,
+                "friction": 9,
+                "gate_penalty": 0,
+            },
+            {
+                "id": "revise-profile-copy",
+                "lane": "application_packet",
+                "title": "Revise the profile copy.",
+                "body": "Change the public framing without adding new technical evidence.",
+                "why": "Useful later, but copy cannot replace current prototype ownership.",
+                "time": "15 minutes",
+                "href": "https://imagineer.aolabs.io/profile.html",
+                "urgency": "medium",
+                "role_alignment": 14,
+                "bottleneck_relief": 7,
+                "evidence_created": 4,
+                "compounding": 8,
+                "urgency_score": 5,
+                "friction": 6,
+                "gate_penalty": 0,
+            },
+            {
+                "id": "ask-for-referral",
+                "lane": "leadership_network",
+                "title": "Ask for a referral now.",
+                "body": "Send a person-facing message before the current technical direction is clearer.",
+                "why": "High upside, but approval-gated and premature without a sharper current artifact.",
+                "time": "30 minutes",
+                "href": "",
+                "urgency": "approval-gated",
+                "role_alignment": 20,
+                "bottleneck_relief": 20,
+                "evidence_created": 6,
+                "compounding": 12,
+                "urgency_score": 8,
+                "friction": 12,
+                "gate_penalty": 25,
+            },
+            {
+                "id": "run-review-only",
+                "lane": "paper_system",
+                "title": "Run another AI review.",
+                "body": "Re-score the same public record without adding new work.",
+                "why": "Good for monitoring, weak as the next move if no new current evidence exists.",
+                "time": "3 minutes",
+                "href": "https://imagineer.aolabs.io/api/imagineer/ai-review",
+                "urgency": "low",
+                "role_alignment": 10,
+                "bottleneck_relief": 8,
+                "evidence_created": 3,
+                "compounding": 10,
+                "urgency_score": 2,
+                "friction": 2,
+                "gate_penalty": 0,
+            },
+        ]
+        for candidate in candidates:
+            candidate["score"] = max(
+                0,
+                min(
+                    100,
+                    candidate["role_alignment"]
+                    + candidate["bottleneck_relief"]
+                    + candidate["evidence_created"]
+                    + candidate["compounding"]
+                    + candidate["urgency_score"]
+                    - candidate["friction"]
+                    - candidate["gate_penalty"],
+                ),
+            )
+        return candidates
+
+    def _dimension_score(self, dimensions: list[dict[str, Any]], key: str) -> int:
+        match = next((item for item in dimensions if item.get("key") == key), None)
+        return int((match or {}).get("score") or 0)
 
     def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
         if allow_openai:
@@ -1560,13 +1716,13 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Turn the readout into one current technical-direction update." if review_count else "Run the autonomous AI review.",
+                "title": "Lock one FluxCell experiment today." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Use the current readout to update the dashboard, profile, paper, or next active technical system."
+                    "Define the motion target, hardware change, measurement, and first build date."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
-                "why": "The principal north star needs visible ownership, source depth, and clean role calibration. External outreach or applications remain approval-gated.",
+                "why": "The principal gap is current ownership. Without a measurable active build, the Disney case stays past-tense.",
             },
             "application_packet": {
                 "lane": key,

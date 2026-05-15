@@ -186,9 +186,9 @@ button:disabled {
 }
 
 .single-step h1 {
-  max-width: 760px;
+  max-width: 780px;
   margin-top: 10px;
-  font-size: clamp(31px, 4.2vw, 48px);
+  font-size: clamp(30px, 3.5vw, 42px);
   line-height: 1.02;
 }
 
@@ -196,7 +196,19 @@ button:disabled {
   max-width: 720px;
   margin-top: 14px;
   color: var(--soft-ink);
-  font-size: clamp(18px, 2vw, 22px);
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.35;
+}
+
+.step-why {
+  max-width: 760px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-soft);
+  color: #1d2a4a;
+  font-size: clamp(15px, 1.35vw, 17px);
+  font-weight: 750;
   line-height: 1.35;
 }
 

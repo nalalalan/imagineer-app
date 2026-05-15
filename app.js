@@ -6,9 +6,10 @@ const progressApiBase = window.PROGRESS_API_BASE || (
 );
 
 const fallbackStep = {
-  title: "Set the next FluxCell test.",
-  body: "Write: motion target, hardware change, pass/fail metric.",
-  time: "5 minutes",
+  title: "Lock one FluxCell experiment today.",
+  body: "Motion target, hardware change, measurement, first build date.",
+  why: "If this stays undefined, the Disney case stays past-tense: strong Sarrus paper, weak current R&D ownership.",
+  time: "7 minutes",
   href: "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
   source: "Fallback step. Progress state did not load.",
   updatedAt: new Date().toISOString(),
@@ -53,6 +54,18 @@ async function loadState() {
 }
 
 function bestStep(ops, progress) {
+  const opsStep = ops?.personal_step || ops?.next_action;
+  if (opsStep?.title && opsStep?.body) {
+    return {
+      ...fallbackStep,
+      ...opsStep,
+      time: opsStep.time || fallbackStep.time,
+      href: opsStep.href || fallbackStep.href,
+      source: opsStep.source || "Imagineer state.",
+      updatedAt: ops?.profile?.updated_at || ops?.generated_at,
+    };
+  }
+
   const progressStep = progress?.goals?.imagineer?.nextStep;
   if (progressStep?.title && progressStep?.body) {
     return {
@@ -60,19 +73,6 @@ function bestStep(ops, progress) {
       ...progressStep,
       source: progressStep.source || "Progress scan.",
       updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
-    };
-  }
-
-  const opsStep = ops?.personal_step || ops?.next_action;
-  if (opsStep?.title && opsStep?.body) {
-    return {
-      ...fallbackStep,
-      title: opsStep.title,
-      body: opsStep.body,
-      time: opsStep.time || "5 minutes",
-      href: opsStep.href || fallbackStep.href,
-      source: opsStep.source || "Imagineer state.",
-      updatedAt: ops?.profile?.updated_at || ops?.generated_at,
     };
   }
 
@@ -86,6 +86,7 @@ function render(step, ops, progress) {
 
   setText("#step-title", step.title);
   setText("#step-body", step.body);
+  setText("#step-why", step.why || step.urgency || "");
   setText("#step-time", step.time || "--");
   setText("#step-updated", formatDateTime(updatedAt));
   setText("#step-source", source || "--");
