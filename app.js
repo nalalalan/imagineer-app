@@ -6,9 +6,9 @@ const progressApiBase = window.PROGRESS_API_BASE || (
 );
 
 const fallbackStep = {
-  title: "Open the PhD organization doc.",
-  body: "Add one line for today: what changed, one blocker, next 10 minutes.",
-  time: "2 minutes",
+  title: "Write one Sarrus design decision.",
+  body: "In the PhD doc: constraint, choice, result, next test.",
+  time: "5 minutes",
   href: "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
   source: "Fallback step. Progress state did not load.",
   updatedAt: new Date().toISOString(),

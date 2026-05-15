@@ -1523,12 +1523,12 @@ class ImagineerSystem:
     def _personal_step(self, state: dict[str, Any], weakest: dict[str, Any]) -> dict[str, Any]:
         return {
             "lane": weakest["key"],
-            "title": "Open the PhD organization doc.",
-            "body": "Add one line for today: what changed, one blocker, next 10 minutes.",
-            "time": "2 minutes",
+            "title": "Write one Sarrus design decision.",
+            "body": "In the PhD doc: constraint, choice, result, next test.",
+            "time": "5 minutes",
             "href": "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
             "source": "Imagineer state plus Progress source graph.",
-            "why": "The easiest durable input is one timestamped line that Progress can read and Imagineer can fold into the profile.",
+            "why": "The active constraint is principal signal. A design-decision note creates source material for technical ownership.",
         }
 
     def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
