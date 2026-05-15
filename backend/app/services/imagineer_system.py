@@ -1584,8 +1584,7 @@ class ImagineerSystem:
                 "title": "Lock one FluxCell experiment today.",
                 "body": "Motion target, hardware change, measurement, first build date.",
                 "why": (
-                    "If this stays undefined, the Disney case stays past-tense: strong Sarrus paper, "
-                    "weak current R&D ownership."
+                    "No current build, no current R&D ownership signal. Define the FluxCell experiment."
                 ),
                 "time": "7 minutes",
                 "href": phd_doc,
@@ -1722,7 +1721,7 @@ class ImagineerSystem:
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
-                "why": "The principal gap is current ownership. Without a measurable active build, the Disney case stays past-tense.",
+                "why": "The principal gap is current ownership. No current build means no current R&D ownership signal.",
             },
             "application_packet": {
                 "lane": key,
