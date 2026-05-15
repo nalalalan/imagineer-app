@@ -1528,7 +1528,7 @@ class ImagineerSystem:
             "time": "5 minutes",
             "href": "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
             "source": "Imagineer state plus Progress source graph.",
-            "why": "Sarrus is already the strong anchor. The active gap is current technical direction beyond the finished paper.",
+            "why": "Sarrus complete. Current technical direction: FluxCell.",
         }
 
     def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
