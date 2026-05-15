@@ -62,7 +62,7 @@ function bestStep(ops, progress) {
       time: opsStep.time || fallbackStep.time,
       href: opsStep.href || fallbackStep.href,
       source: opsStep.source || "Imagineer state.",
-      updatedAt: ops?.profile?.updated_at || ops?.generated_at,
+      updatedAt: ops?.generated_at || ops?.profile?.updated_at,
     };
   }
 
