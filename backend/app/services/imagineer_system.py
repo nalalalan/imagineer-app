@@ -272,10 +272,11 @@ class ImagineerSystem:
         reviewer_ready_portfolio = [item for item in state["portfolio"] if "reviewer_ready" in item.get("tags", [])]
         ai_reviews = state.get("reviews", [])
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
+        generated_at = _utc_now()
 
         return {
             "status": "building_position_machine_v1",
-            "generated_at": _utc_now(),
+            "generated_at": generated_at,
             "target": state["target"],
             "positioning": state["positioning"],
             "fit_score": fit_score,
@@ -299,7 +300,7 @@ class ImagineerSystem:
             "portfolio": state["portfolio"],
             "journal": state["journal"][:8],
             "guardrails": state["guardrails"],
-            "profile": self._profile_view(state),
+            "profile": self._profile_view(state, read_at=generated_at),
             "paper": self.paper_outline(compact=True),
             "weekly_paper": self.weekly_paper(compact=True),
             "artifacts": {
@@ -644,7 +645,7 @@ class ImagineerSystem:
             },
         }
 
-    def _profile_view(self, state: dict[str, Any]) -> dict[str, Any]:
+    def _profile_view(self, state: dict[str, Any], read_at: str | None = None) -> dict[str, Any]:
         profile = state.get("profile_record") if isinstance(state.get("profile_record"), dict) else {}
         latest_review = next(iter(state.get("reviews", [])), None)
         source_count = self._profile_source_count(state)
@@ -652,9 +653,12 @@ class ImagineerSystem:
         latest_source_count = 0
         if isinstance(latest_review, dict):
             latest_source_count = int(latest_review.get("source_count") or 0)
-        updated_at = self._latest_profile_timestamp(state)
+        source_updated_at = self._latest_profile_timestamp(state)
+        updated_at = read_at or source_updated_at
         return {
             "updated_at": updated_at,
+            "read_at": read_at,
+            "source_updated_at": source_updated_at,
             "latest_review_at": latest_review.get("created_at") if isinstance(latest_review, dict) else None,
             "source_count": max(source_count, latest_source_count, recorded_source_count),
             "scope": profile.get("scope") or "whole_public_ao_labs_graph",

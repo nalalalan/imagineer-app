@@ -817,6 +817,39 @@ h2 {
   min-width: 0;
 }
 
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+  background: #fbfcf9;
+}
+
+.live-grid div {
+  min-width: 0;
+  padding: 14px 16px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.live-grid strong,
+.live-grid span {
+  display: block;
+}
+
+.live-grid strong {
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.live-grid span {
+  margin-top: 5px;
+  color: var(--soft-ink);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .packet-section {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
@@ -915,7 +948,8 @@ h2 {
   .report-focus,
   .paper-panel,
   .packet-section,
-  .packet-grid {
+  .packet-grid,
+  .live-grid {
     grid-template-columns: 1fr;
   }
 
