@@ -6,8 +6,8 @@ const progressApiBase = window.PROGRESS_API_BASE || (
 );
 
 const fallbackStep = {
-  title: "Write one Sarrus design decision.",
-  body: "In the PhD doc: constraint, choice, result, next test.",
+  title: "Set the next FluxCell test.",
+  body: "Write: motion target, hardware change, pass/fail metric.",
   time: "5 minutes",
   href: "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
   source: "Fallback step. Progress state did not load.",

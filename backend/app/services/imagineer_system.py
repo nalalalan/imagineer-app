@@ -1523,12 +1523,12 @@ class ImagineerSystem:
     def _personal_step(self, state: dict[str, Any], weakest: dict[str, Any]) -> dict[str, Any]:
         return {
             "lane": weakest["key"],
-            "title": "Write one Sarrus design decision.",
-            "body": "In the PhD doc: constraint, choice, result, next test.",
+            "title": "Set the next FluxCell test.",
+            "body": "Write: motion target, hardware change, pass/fail metric.",
             "time": "5 minutes",
             "href": "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
             "source": "Imagineer state plus Progress source graph.",
-            "why": "The active constraint is principal signal. A design-decision note creates source material for technical ownership.",
+            "why": "Sarrus is already the strong anchor. The active gap is current technical direction beyond the finished paper.",
         }
 
     def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
@@ -1560,9 +1560,9 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Turn the readout into one system-owned improvement." if review_count else "Run the autonomous AI review.",
+                "title": "Turn the readout into one current technical-direction update." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Use the current readout to update the dashboard, profile, paper, or Sarrus framing."
+                    "Use the current readout to update the dashboard, profile, paper, or next active technical system."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
