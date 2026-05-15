@@ -80,7 +80,11 @@ DEFAULT_STATE: dict[str, Any] = {
             "https://relaylive.aolabs.io",
             "https://progress.aolabs.io",
             "https://progress.aolabs.io/api/progress/summary",
+            "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/export?format=txt",
+            "https://www.youtube.com/@nalalan",
             "https://curtis.aolabs.io",
+            "https://curtis.aolabs.io/api/curtis/media-status",
+            "https://curtis.aolabs.io/api/curtis/daily-records",
             "https://curtis.aolabs.io/paper",
             "https://ocean.aolabs.io",
             "https://talk.aolabs.io",
@@ -258,6 +262,7 @@ class ImagineerSystem:
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
         next_action = self._next_action(state, weakest)
+        personal_step = self._personal_step(state, weakest)
         active_experiment = self._active_experiment(state)
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
@@ -276,6 +281,7 @@ class ImagineerSystem:
             "confidence": self._confidence_label(fit_score),
             "current_bottleneck": weakest,
             "next_action": next_action,
+            "personal_step": personal_step,
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
@@ -602,6 +608,7 @@ class ImagineerSystem:
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
         next_action = self._next_action(state, weakest)
+        personal_step = self._personal_step(state, weakest)
         active_experiment = self._active_experiment(state)
         proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
@@ -616,6 +623,7 @@ class ImagineerSystem:
             "confidence": self._confidence_label(fit_score),
             "current_bottleneck": weakest,
             "next_action": next_action,
+            "personal_step": personal_step,
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
@@ -752,6 +760,7 @@ class ImagineerSystem:
             "fit_score": ops["fit_score"],
             "current_bottleneck": ops["current_bottleneck"],
             "next_action": ops["next_action"],
+            "personal_step": ops.get("personal_step"),
             "active_experiment": ops["active_experiment"],
             "dimensions": ops["dimensions"],
             "profile": ops.get("profile") or self._profile_view(state),
@@ -1510,6 +1519,17 @@ class ImagineerSystem:
             "target_warm_review_requests": 1,
         }
         return {**experiment, "started_at": start, "progress": progress}
+
+    def _personal_step(self, state: dict[str, Any], weakest: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "lane": weakest["key"],
+            "title": "Open the PhD organization doc.",
+            "body": "Add one line for today: what changed, one blocker, next 10 minutes.",
+            "time": "2 minutes",
+            "href": "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
+            "source": "Imagineer state plus Progress source graph.",
+            "why": "The easiest durable input is one timestamped line that Progress can read and Imagineer can fold into the profile.",
+        }
 
     def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
         if allow_openai:

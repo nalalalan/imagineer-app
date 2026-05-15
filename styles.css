@@ -66,6 +66,10 @@ dd {
   padding: 14px 0 28px;
 }
 
+.step-shell {
+  --max: 860px;
+}
+
 .topbar {
   min-height: 48px;
   display: flex;
@@ -174,6 +178,71 @@ button:disabled {
 
 .command-panel {
   padding: clamp(20px, 3vw, 28px);
+}
+
+.single-step {
+  margin-top: 44px;
+  padding: clamp(24px, 4vw, 38px);
+}
+
+.single-step h1 {
+  max-width: 760px;
+  margin-top: 10px;
+  font-size: clamp(31px, 4.2vw, 48px);
+  line-height: 1.02;
+}
+
+.step-copy {
+  max-width: 720px;
+  margin-top: 14px;
+  color: var(--soft-ink);
+  font-size: clamp(18px, 2vw, 22px);
+  line-height: 1.35;
+}
+
+.step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.step-actions .button-link,
+.step-actions button {
+  min-height: 42px;
+}
+
+.step-meta {
+  display: grid;
+  grid-template-columns: 110px minmax(130px, 180px) minmax(0, 1fr);
+  gap: 0;
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.step-meta div {
+  min-width: 0;
+  padding: 13px 14px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fbfcf9;
+}
+
+.step-meta dt {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.step-meta dd {
+  margin-top: 5px;
+  color: var(--soft-ink);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .hero-grid {
@@ -872,6 +941,15 @@ h2 {
     grid-template-columns: 115px minmax(0, 1fr);
   }
 
+  .step-meta {
+    grid-template-columns: 1fr;
+    border-left: 0;
+  }
+
+  .step-meta div {
+    border-left: 1px solid var(--line);
+  }
+
   .state-row em {
     grid-column: 2;
   }
@@ -945,6 +1023,24 @@ h2 {
 
   h1 {
     font-size: clamp(24px, 6.2vw, 26px);
+  }
+
+  .single-step {
+    margin-top: 20px;
+    padding: 20px;
+  }
+
+  .single-step h1 {
+    font-size: 30px;
+  }
+
+  .step-copy {
+    font-size: 18px;
+  }
+
+  .step-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .packet h1 {
