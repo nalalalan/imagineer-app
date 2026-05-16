@@ -11,7 +11,7 @@
     backend=biber,
     sorting=none,
     articletitle=true,
-    url=true,
+    url=false,
     doi=false,
     eprint=false,
     isbn=false
@@ -26,14 +26,20 @@
 \usepackage{booktabs}
 \usepackage[margin=0.92in,top=0.82in,bottom=0.95in,headsep=18pt,footskip=24pt]{geometry}
 \usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{afterpage}
 \usepackage{array}
 \usepackage{tabularx}
+\usepackage{multirow}
 \usepackage{setspace}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{fancyhdr}
 \usepackage{needspace}
 \usepackage{etoolbox}
+\usepackage[section]{placeins}
+\usepackage{flafter}
 \usepackage[table]{xcolor}
 
 \definecolor{ClayLine}{HTML}{EEDBDD}
@@ -49,9 +55,22 @@
 \setstretch{1.45}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0.42em}
-\setlength{\tabcolsep}{8pt}
-\renewcommand{\arraystretch}{1.16}
+\setlength{\textfloatsep}{8pt plus 1pt minus 1pt}
+\setlength{\floatsep}{7pt plus 1pt minus 1pt}
+\setlength{\intextsep}{7pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{5pt}
+\setlength{\belowcaptionskip}{2pt}
+\setlength{\tabcolsep}{9pt}
+\renewcommand{\arraystretch}{1.14}
+\captionsetup{justification=raggedright,singlelinecheck=false}
 \setlist[itemize]{leftmargin=1.3em,itemsep=0.18em,topsep=0.25em}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.8}
 \setlength{\headheight}{24pt}
 \emergencystretch=2em
 \raggedbottom
@@ -91,6 +110,11 @@
 \renewcommand{\headrule}{\hbox to\headwidth{\color{ClayLine}\leaders\hrule height \headrulewidth\hfill}}
 \renewcommand{\sectionmark}[1]{\markboth{#1}{}}
 
+\makeatletter
+\def\fps@figure{tbp}
+\def\fps@table{tbp}
+\makeatother
+
 \begin{document}
 \linenumbers
 \thispagestyle{empty}
@@ -114,7 +138,7 @@
 \end{center}
 
 \vspace{0.35em}
-\noindent\textbf{Autonomous agents are increasingly able to plan, monitor, and execute tool-mediated workflows, but a career objective is normally treated as motivation rather than as a measurable control problem. We report an autonomous career system that converts a target role, Walt Disney Imagineering Research and Development mechanical Imagineering in Glendale, into a logged state machine with role-fit dimensions, guardrails, review cycles, continuous manuscript updates, and public artifacts. The review loop uses GPT-5.5 when quota is available and a deterministic fallback when the model call fails; both paths use a whole-public-AO-Labs source graph including the CV, Sarrus, FluxCell, Relay, Relay Live, Progress, Curtis, Ocean, Talk, Yum, Lily, other public project surfaces, the WDI R\&D profile, the active WDI listing, and Disney Research context. It can critique public sources autonomously but cannot send outreach, claim relationships, submit applications, or use private email/contact data without approval. At the current code lock on 15 May 2026, the production source registry also includes the PhD organization Google Doc text export, the public YouTube channel at \url{https://www.youtube.com/@nalalan}, Curtis practice endpoints, the Progress app itself, and additional AO Labs public surfaces. The live dashboard now uses a failure-cost evidence-ROI selector rather than the earlier weakest-signal rule alone. Candidate moves are scored by direct Disney-role alignment, bottleneck relief, current evidence created, compounding value, urgency, friction, and approval-gate penalty. The selected step is to lock one FluxCell experiment today by naming the motion target, hardware change, measurement, and first build date. The detailed analysis remains on the profile page, which now reads live Imagineer and Progress state, exposes the current source-count and readiness metrics, and renders the six role-fit lanes as concrete signals rather than a stale static profile. Progress stores the PhD document as private server-side source state and exposes only source status, size, freshness, and derived current-step state publicly. The live fit signal is 74 of 100 with a credible-but-needs-signal confidence label; the same central constraint remains: Sarrus makes the active Glendale mechanical-design rung credible, while principal-scope ownership and an active principal posting remain unverified. On 7 May 2026, the CV was revised to remove the redundant Sarrus subpage split and point the public record toward mechanical R\&D, soft robotics, motion systems, and human-facing physical prototypes. On 15 May 2026, \url{https://progress.aolabs.io} was expanded from a general source ledger into the shared input layer for Imagineer, Curtis, Relay, the PhD planning document, YouTube practice media, papers, CV artifacts, and sibling AO Labs apps. The paper itself is part of the control loop. Any substantive change to a paper-backed AO Labs system must update the manuscript and PDF so the public artifact remains a cumulative record rather than a stale explainer. The contribution is therefore not a claim that the system has secured a job. It is a falsifiable protocol for making an otherwise ambiguous career-conversion process auditable, adaptive, continuously documented, and constrained by truthful public sources.}
+\noindent\textbf{Career development for a specific research-and-development role is usually managed as motivation, memory, and scattered artifacts rather than as an auditable control problem. We report an autonomous career system that converts the Walt Disney Imagineering Research and Development mechanical Imagineering target into a logged state machine with source registries, role-fit dimensions, guardrails, review cycles, current-step selection, and continuous manuscript updates. The live reviewer can critique public AO Labs evidence, the WDI role context, Disney Research context, CV material, project surfaces, and selected private source-status summaries, but it cannot send outreach, claim relationships, submit applications, or expose private source text without approval. At the 15 May 2026 evidence lock, the dashboard selected a single current step: lock one FluxCell experiment by naming the motion target, hardware change, measurement, and first build date. The live fit signal was 74 of 100 with credible-but-needs-signal confidence. The contribution is not a job-success claim. It is a falsifiable protocol for making an ambiguous career-conversion process measurable, source-bounded, adaptive, and continuously documented.}
 
 \newpage
 \pagestyle{fancy}
