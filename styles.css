@@ -70,6 +70,59 @@ dd {
   --max: 860px;
 }
 
+.paper-strip {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 12px clamp(16px, 3vw, 34px);
+  border-bottom: 1px solid rgba(92, 78, 62, .16);
+  background: rgba(255, 252, 246, .98);
+  color: #25150d;
+}
+
+.paper-copy {
+  min-width: 0;
+}
+
+.paper-copy span {
+  display: block;
+  margin-bottom: 4px;
+  color: rgba(95, 78, 59, .62);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.paper-copy strong {
+  display: block;
+  color: #25150d;
+  font-size: 28px;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+
+.paper-copy p {
+  max-width: 840px;
+  margin: 6px 0 0;
+  color: rgba(63, 48, 35, .72);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.paper-button.primary {
+  min-height: 42px;
+  border-color: rgba(214, 176, 86, .46);
+  background: #e8bf69;
+  color: #21140d;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .topbar {
   min-height: 48px;
   display: flex;
@@ -938,6 +991,11 @@ h2 {
 }
 
 @media (max-width: 900px) {
+  .paper-strip {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
   .panel,
   .packet {
     padding: 18px;
@@ -1016,6 +1074,15 @@ h2 {
 }
 
 @media (max-width: 560px) {
+  .paper-copy strong {
+    font-size: 22px;
+    line-height: 1.06;
+  }
+
+  .paper-button.primary {
+    width: 100%;
+  }
+
   .shell {
     width: min(100%, 368px);
     margin: 0 auto;
