@@ -22,6 +22,11 @@ function setText(selector, value) {
   if (node) node.textContent = clean(value);
 }
 
+function setVisible(selector, visible) {
+  const node = $(selector);
+  if (node) node.hidden = !visible;
+}
+
 async function request(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeout || 9000);
@@ -42,6 +47,8 @@ async function request(url, options = {}) {
 async function loadState() {
   setText("#step-title", "Loading current step.");
   setText("#step-body", "Reading Progress and Imagineer state.");
+  setVisible("#step-why", false);
+  setVisible("#step-meta", false);
 
   const [opsResult, progressResult] = await Promise.allSettled([
     request(`${apiBase}/api/imagineer/ops-check`),
@@ -83,13 +90,16 @@ function render(step, ops, progress) {
   const updatedAt = step.updatedAt || progress?.latest?.createdAt || ops?.profile?.updated_at || ops?.generated_at;
   const sourceCount = progress?.latest?.sourceCount || ops?.profile?.source_count || ops?.reviewer?.source_count;
   const source = sourceCount ? `${step.source} ${sourceCount} sources.` : step.source;
+  const why = step.why || step.urgency || "";
 
   setText("#step-title", step.title);
   setText("#step-body", step.body);
-  setText("#step-why", step.why || step.urgency || "");
+  setText("#step-why", why);
   setText("#step-time", step.time || "--");
   setText("#step-updated", formatDateTime(updatedAt));
   setText("#step-source", source || "--");
+  setVisible("#step-why", Boolean(why));
+  setVisible("#step-meta", true);
 
   const link = $("#step-link");
   if (link) {
