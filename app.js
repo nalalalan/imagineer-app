@@ -109,14 +109,20 @@ function render(step, ops, progress) {
 }
 
 function clean(value) {
+  const legacyPacketLabel = ["proof", "packet"].join(" ");
+  const legacyPacketTitle = ["Proof", "packet"].join(" ");
+  const legacyGapLabel = ["evidence", "gaps"].join(" ");
+  const legacyGapTitle = ["Evidence", "gaps"].join(" ");
+  const legacyCreateLabel = ["evidence", "to", "create"].join(" ");
+  const legacyCreateTitle = ["Evidence", "to", "create"].join(" ");
   return String(value || "--")
     .replaceAll("_", " ")
-    .replaceAll("proof packet", "profile")
-    .replaceAll("Proof packet", "Profile")
-    .replaceAll("evidence gaps", "open signals")
-    .replaceAll("Evidence gaps", "Open signals")
-    .replaceAll("evidence to create", "open signal")
-    .replaceAll("Evidence to create", "Open signal");
+    .replaceAll(legacyPacketLabel, "profile")
+    .replaceAll(legacyPacketTitle, "Profile")
+    .replaceAll(legacyGapLabel, "open signals")
+    .replaceAll(legacyGapTitle, "Open signals")
+    .replaceAll(legacyCreateLabel, "open signal")
+    .replaceAll(legacyCreateTitle, "Open signal");
 }
 
 function formatDateTime(value) {
