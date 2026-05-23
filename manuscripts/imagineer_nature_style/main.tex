@@ -197,7 +197,7 @@ This policy is intentionally conservative. It can make public artifacts, update 
 
 \section{Results}
 
-The current deployment is functional and has moved beyond the initial dashboard-only state. The dashboard and backend are live, the paper endpoint published the 2026-W21 snapshot on 18 May 2026, the site exposes a PDF manuscript, and the AI-review path has produced live production critiques from the public source graph. The 18 May weekly snapshot reported 74 of 100 fit, credible-but-needs-signal confidence, principal signal as the current bottleneck at 56 of 100, and zero outreach events. The latest recorded AI review is still the 9 May 2026 production critique over 33 sources; no new model review, application, interview, referral, contact, or external validation was created by this weekly run. The configured GPT-5.5 call in the latest recorded review had returned an OpenAI quota error, so the deterministic fallback produced the conservative review: score 74 of 100, credible mechanism depth, developing Disney motion signal, and thin principal-scope ownership signal.
+The current deployment is functional and has moved beyond the initial dashboard-only state. The dashboard and backend are live, the paper endpoint published the 2026-W21 snapshot on 18 May 2026, the site exposes a PDF manuscript, and the AI-review path has produced live production critiques from the public source graph. The 18 May weekly snapshot reported 74 of 100 fit, credible-but-needs-signal confidence, principal signal as the current bottleneck at 56 of 100, and zero outreach events. The latest recorded AI review is still the 9 May 2026 production critique over 33 sources; no new model review, application, interview, referral, contact, or external validation was created by this weekly run. In that recorded review, the then-configured GPT-5.5 call returned an OpenAI quota error, so the deterministic fallback produced the conservative review: score 74 of 100, credible mechanism depth, developing Disney motion signal, and thin principal-scope ownership signal. The runtime default has since been lowered to GPT-5 mini for cost control, while an environment override can still select a stronger model for a deliberate review.
 
 The largest artifact change in this cycle was the Sarrus technical record. The system published geometry, compliant-link and flexural-joint path, pressure-driven expansion, module assembly, build state, force/stiffness figures, and motion examples. It then added an HTML-visible measurement table with pressure range, expansion ratio, estimated leg angle, output force, local stiffness, hysteresis status, planar dome height, double-dome resolution, and prototype limitation. The WDI R\&D profile now uses this table as the dominant technical path while preserving the current data boundary: raw digitized force, stiffness, and hysteresis curves with uncertainty remain unresolved.
 
@@ -216,7 +216,7 @@ The profile page now exposes a live read timestamp rather than the older static 
 \begin{table}[tbp]
 \centering
 \small
-\caption{Latest autonomous review result. The reviewer path is source-bounded over the public AO Labs graph; the latest production record used the deterministic fallback because the configured GPT-5.5 call returned an OpenAI quota error.}
+\caption{Latest autonomous review result. The reviewer path is source-bounded over the public AO Labs graph; the latest production record used the deterministic fallback because the then-configured GPT-5.5 call returned an OpenAI quota error. The runtime default is now GPT-5 mini unless overridden.}
 \label{tab:reviewer}
 \rowcolors{2}{SignalPale}{white}
 \begin{tabularx}{\textwidth}{L{0.30\textwidth}Y}
@@ -224,7 +224,7 @@ The profile page now exposes a live read timestamp rather than the older static 
 \rowcolor{ClayLine}
 \textbf{Field} & \textbf{Recorded value} \\
 \midrule
-Model & Deterministic fallback after OpenAI quota error; GPT-5.5 remains the configured model \\
+Model & Deterministic fallback after OpenAI quota error; runtime default now GPT-5 mini unless overridden \\
 Scope & Whole public AO Labs graph plus WDI role and Disney Research context \\
 Source count & 33 sources in the latest recorded AI review and Imagineer operations profile count; 51 sources in the live public profile's Progress-backed source line; no fresh AI review was run in the 18 May weekly snapshot \\
 Review score & 74 of 100 \\

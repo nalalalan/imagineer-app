@@ -62,7 +62,7 @@ DEFAULT_STATE: dict[str, Any] = {
     ],
     "reviewer": {
         "mode": "autonomous_ai",
-        "model": "gpt-5.5",
+        "model": "gpt-5-mini",
         "scope": "whole_public_ao_labs_graph",
         "approval_boundary": "The system can review, score, rewrite internal surfaces, and update public AO Labs pages. Human approval is required before applications, referral asks, direct outreach, or anything person-facing.",
         "source_urls": [
@@ -1785,7 +1785,7 @@ class ImagineerSystem:
             }
 
     def _openai_model(self) -> str:
-        return os.getenv("IMAGINEER_OPENAI_MODEL", "gpt-5.5").strip() or "gpt-5.5"
+        return os.getenv("IMAGINEER_OPENAI_MODEL", "gpt-5-mini").strip() or "gpt-5-mini"
 
     def _signal_action_for_dimension(self, key: str) -> str:
         signals = {
