@@ -39,6 +39,10 @@ DEFAULT_STATE: dict[str, Any] = {
         "active_listing_job_id": "10146734",
         "active_listing_posted": "2026-04-08",
         "active_listing_url": "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
+        "active_listing_last_checked_at": "2026-05-27T13:16:08+00:00",
+        "active_listing_last_status_code": 404,
+        "active_listing_state": "unavailable_on_last_check",
+        "active_listing_note": "Both Disney Careers listing routes returned 404 on 2026-05-27; keep this as the recorded role-shape target until a current open posting is verified.",
         "north_star_note": "Use the principal title as the north-star profile; verify any open principal posting before applying.",
     },
     "positioning": POSITIONING_LINE,
@@ -1296,6 +1300,10 @@ class ImagineerSystem:
         if not isinstance(existing_profile, dict):
             existing_profile = {}
         merged["profile_record"] = {**copy.deepcopy(DEFAULT_STATE["profile_record"]), **existing_profile}
+        existing_target = state.get("target", {})
+        if not isinstance(existing_target, dict):
+            existing_target = {}
+        merged["target"] = {**copy.deepcopy(DEFAULT_STATE["target"]), **existing_target}
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
         return merged
@@ -1703,7 +1711,7 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Make one mechanism calculation visible.",
                 "body": "Pick one Sarrus or FluxCell mechanism and publish a compact load, travel, stiffness, force, tolerance, or actuation note that reads as mechanically rigorous.",
-                "why": "The active listing asks for mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering.",
+                "why": "The recorded role shape asks for mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering; verify a current open listing before applying.",
             },
             "creative_prototyping": {
                 "lane": key,
