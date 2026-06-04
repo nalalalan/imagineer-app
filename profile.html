@@ -24,9 +24,9 @@
   <meta property="og:url" content="https://imagineer.aolabs.io/profile.html">
   <link rel="icon" href="https://aolabs.io/favicon.svg?v=20260516-suite-bloom" type="image/svg+xml">
   <link rel="stylesheet" href="https://aolabs.io/suite-header.css?v=20260516-suite-bloom">
-  <link rel="stylesheet" href="./styles.css?v=20260515-live-profile">
+  <link rel="stylesheet" href="./styles.css?v=20260604-profile-loading">
 </head>
-<body>
+<body data-profile-state="loading">
   <header class="suite-topbar" aria-label="imagineer navigation">
     <div class="suite-brand-cluster">
       <a class="suite-ao-home" href="https://aolabs.io/" aria-label="aolabs.io">
@@ -52,8 +52,8 @@
         <div class="profile-meta" aria-label="Profile state">
           <span id="profile-updated">Reading live profile</span>
           <span id="profile-sources">Reading source graph</span>
-          <span id="profile-score">Readiness --/100</span>
-          <span id="profile-bottleneck">Bottleneck --</span>
+          <span id="profile-score">Readiness loading</span>
+          <span id="profile-bottleneck">Bottleneck loading</span>
         </div>
       </header>
 
@@ -90,7 +90,7 @@
         <div class="review-note profile-source-note" aria-label="Source state">
           <p id="source-summary">Reading Progress and Imagineer state.</p>
           <p id="source-detail">Role-fit credit is bounded by direct relevance to mechanical R&amp;D, physical interaction, prototypes, systems, and principal-scope ownership.</p>
-          <p id="source-freshness">Progress scan pending.</p>
+          <p id="source-freshness">Progress scan loading.</p>
         </div>
       </section>
 
@@ -232,7 +232,6 @@
         if (node && value) node.textContent = value;
       };
       const compact = (items) => (items || []).filter(Boolean).slice(0, 4).join(" / ");
-      const scoreText = (item) => item ? `${item.score}/100` : "--/100";
       const renderDimensions = (dimensions) => {
         const table = document.getElementById("dimension-rows");
         if (!table || !Array.isArray(dimensions) || !dimensions.length) return;
@@ -261,23 +260,26 @@
         const opsCount = Number(ops?.profile?.source_count) || Number(ops?.reviewer?.source_count) || 0;
         const sourceCount = Math.max(progressCount, opsCount);
         const profileTime = ops?.generated_at || ops?.profile?.updated_at || progress?.latest?.createdAt || progress?.updatedAt;
+        const hasLiveState = Boolean(ops || progress);
 
-        setText("profile-updated", formatDateTime(profileTime) || "Live profile read");
-        setText("profile-sources", sourceCount ? `${sourceCount} public sources tracked` : "Whole public AO Labs graph");
-        setText("profile-score", ops?.fit_score ? `Readiness ${ops.fit_score}/100` : "Readiness --/100");
-        setText("profile-bottleneck", ops?.current_bottleneck ? `${ops.current_bottleneck.label} ${ops.current_bottleneck.score}/100` : "Bottleneck --");
+        setText("profile-updated", formatDateTime(profileTime) || "Live profile unavailable");
+        setText("profile-sources", sourceCount ? `${sourceCount} public sources tracked` : "Live source graph unavailable");
+        setText("profile-score", ops?.fit_score ? `Readiness ${ops.fit_score}/100` : "Readiness unavailable");
+        setText("profile-bottleneck", ops?.current_bottleneck ? `${ops.current_bottleneck.label} ${ops.current_bottleneck.score}/100` : "Bottleneck unavailable");
         setText("live-target", ops?.target?.active_rung_title || "Active target");
         setText("live-north-star", ops?.target?.north_star_title || "North star");
         setText("live-next", ops?.personal_step?.title || "Current system action");
-        setText("source-summary", sourceCount ? `${sourceCount} sources tracked; ${progressHealthy || "--"} healthy in the latest Progress scan.` : "Whole public AO Labs graph.");
-        setText("source-detail", `Profile basis: ${ops?.profile?.basis || "AO Labs home, CV, public project surfaces, papers, dashboards, progress ledger, review state, and role-specific profile."}`);
-        setText("source-freshness", progress?.latest?.createdAt ? `Progress scan ${formatDateTime(progress.latest.createdAt).replace("Updated ", "")}; changed: ${compact(progress.latest.deltas?.changed) || "none"}.` : "Progress scan pending.");
-        setText("system-step", ops?.personal_step ? `${ops.personal_step.title} ${ops.personal_step.body}` : "Reading current system action.");
+        setText("source-summary", sourceCount ? `${sourceCount} sources tracked; ${progressHealthy ? `${progressHealthy} healthy` : "health count unavailable"} in the latest Progress scan.` : hasLiveState ? "Whole public AO Labs graph." : "Live source graph unavailable.");
+        setText("source-detail", hasLiveState ? `Profile basis: ${ops?.profile?.basis || "AO Labs home, CV, public project surfaces, papers, dashboards, progress ledger, review state, and role-specific profile."}` : "Profile basis unavailable until live state responds.");
+        setText("source-freshness", progress?.latest?.createdAt ? `Progress scan ${formatDateTime(progress.latest.createdAt).replace("Updated ", "")}; changed: ${compact(progress.latest.deltas?.changed) || "none"}.` : "Progress scan unavailable.");
+        setText("system-step", ops?.personal_step ? `${ops.personal_step.title} ${ops.personal_step.body}` : "Current system action unavailable.");
         setText("system-why", ops?.personal_step?.why || ops?.next_action?.why || "Principal signal depends on current ownership, not only completed past work.");
-        setText("system-metrics", ops?.evidence ? `${ops.evidence.ai_reviews} AI reviews; ${ops.evidence.journal_entries} journal entries; ${ops.evidence.proof_events} event logs; ${ops.evidence.outreach_events} outreach events.` : "Reading system metrics.");
+        setText("system-metrics", ops?.evidence ? `${ops.evidence.ai_reviews} AI reviews; ${ops.evidence.journal_entries} journal entries; ${ops.evidence.proof_events} event logs; ${ops.evidence.outreach_events} outreach events.` : "System metrics unavailable.");
         renderDimensions(ops?.dimensions);
+        document.body.dataset.profileState = hasLiveState ? "loaded" : "unavailable";
       }).catch(() => {
         setText("profile-updated", "Live profile read unavailable");
+        document.body.dataset.profileState = "error";
       });
     })();
   </script>
