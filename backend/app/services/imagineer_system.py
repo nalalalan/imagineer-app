@@ -111,7 +111,7 @@ DEFAULT_STATE: dict[str, Any] = {
         "technical_pattern": [
             "Soft robotics, compliant mechanisms, continuum robots, modular soft robots, morphing surfaces, haptics, and human-robot interaction.",
             "First-author Sarrus work on monolithically printed pneumatic cells that reconfigure into surfaces and robot bodies.",
-            "FluxCell work exploring printed electropermanent actuation for Sarrus cells.",
+            "FluxCell work exploring actuator-less linkage validation before pneumatic and electropermanent actuation integration.",
             "Mechanical design experience spanning CAD, prototype fabrication, testing, dynamics, sensors, and physical systems.",
         ],
         "builder_pattern": [
@@ -134,7 +134,7 @@ DEFAULT_STATE: dict[str, Any] = {
         {
             "name": "FluxCell",
             "url": "https://fluxcell.aolabs.io",
-            "summary": "Printed electropermanent actuation concept for Sarrus cells.",
+            "summary": "Current prototype path: actuator-less linkage validation before pneumatic and electropermanent actuation integration.",
             "tags": ["actuation", "mechanical_depth", "creative_prototyping", "paper_system"],
         },
         {
@@ -1593,10 +1593,10 @@ class ImagineerSystem:
             {
                 "id": "lock-fluxcell-experiment",
                 "lane": "leadership_network",
-                "title": "Lock one FluxCell experiment today.",
-                "body": "Motion target, hardware change, measurement, first build date.",
+                "title": "Make the FluxCell linkage test.",
+                "body": "Actuator-less array, clip-programmed shape, overhang motion check.",
                 "why": (
-                    "No current build, no current R&D ownership signal. Define the FluxCell experiment."
+                    "The current source names the prototype path; visible ownership now needs a measured first build."
                 ),
                 "time": "7 minutes",
                 "href": phd_doc,
@@ -1727,13 +1727,13 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Lock one FluxCell experiment today." if review_count else "Run the autonomous AI review.",
+                "title": "Make the FluxCell linkage test." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Define the motion target, hardware change, measurement, and first build date."
+                    "Prototype the actuator-less array, clip-program the shape, and check overhang motion."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
-                "why": "The principal gap is current ownership. No current build means no current R&D ownership signal.",
+                "why": "The principal gap is current ownership. The source now points to a first measurable FluxCell build.",
             },
             "application_packet": {
                 "lane": key,

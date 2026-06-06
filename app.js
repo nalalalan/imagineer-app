@@ -6,9 +6,9 @@ const progressApiBase = window.PROGRESS_API_BASE || (
 );
 
 const fallbackStep = {
-  title: "Lock one FluxCell experiment today.",
-  body: "Motion target, hardware change, measurement, first build date.",
-  why: "No current build, no current R&D ownership signal. Define the FluxCell experiment.",
+  title: "Make the FluxCell linkage test.",
+  body: "Actuator-less array, clip-programmed shape, overhang motion check.",
+  why: "The current source names the prototype path; visible ownership now needs a measured first build.",
   time: "7 minutes",
   href: "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
   source: "Fallback step. Progress state did not load.",
