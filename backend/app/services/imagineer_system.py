@@ -23,6 +23,10 @@ DISNEY_JOB_SEARCH_URL = (
     "https://www.disneycareers.com/en/search-jobs?"
     "keywords=Imagineering%20mechanical&location=Glendale%2C%20CA%2C%20United%20States"
 )
+VERIFIED_DISNEY_JOB_URL = (
+    "https://www.disneycareers.com/en/job/glendale/"
+    "principal-ride-development-engineer-design-assurance/391/87268384416"
+)
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 
 
@@ -38,17 +42,17 @@ DEFAULT_STATE: dict[str, Any] = {
     "active_experiment_id": "autonomous-ai-reviewer-v0",
     "target": {
         "north_star_title": "Principal R&D Imagineer - Mechanical Engineer",
-        "active_rung_title": "WDI R&D mechanical Imagineering search lane",
-        "company": "Walt Disney Imagineering R&D",
+        "active_rung_title": "Principal Ride Development Engineer, Design Assurance",
+        "company": "Walt Disney Imagineering",
         "location": "Glendale, California",
-        "active_listing_job_id": "",
-        "active_listing_posted": "",
-        "active_listing_url": DISNEY_JOB_SEARCH_URL,
-        "active_listing_state": "no_verified_live_listing",
-        "active_listing_last_checked_at": "2026-06-07T08:38:00+00:00",
-        "active_listing_last_status_code": 404,
-        "active_listing_note": "Disney job ID 10146734 / 93733641696 returned 404 / Job Not Found on 2026-06-07; keep it only as an expired role-shape reference until a destination page verifies live.",
-        "north_star_note": "Use the principal title as the north-star profile; verify any open principal posting before applying.",
+        "active_listing_job_id": "10134485",
+        "active_listing_posted": "2026-06-01",
+        "active_listing_url": VERIFIED_DISNEY_JOB_URL,
+        "active_listing_state": "verified_live_listing",
+        "active_listing_last_checked_at": "2026-06-07T09:18:19+00:00",
+        "active_listing_last_status_code": 200,
+        "active_listing_note": "Disney Careers destination verified live on 2026-06-07: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
+        "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride-development design assurance, not proof of R&D hiring fit.",
     },
     "positioning": POSITIONING_LINE,
     "profile_record": {
@@ -1596,7 +1600,7 @@ class ImagineerSystem:
                 "selected_score": selected["score"],
                 "current_bottleneck": weakest["key"],
                 "inputs": [
-                    "verified WDI mechanical job search lane",
+                    "verified WDI ride-development design-assurance lead",
                     "principal-scope north star",
                     "role-fit dimension scores",
                     "AO Labs public-source graph",
@@ -1735,7 +1739,7 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Make one mechanism calculation visible.",
                 "body": "Pick one Sarrus or FluxCell mechanism and publish a compact load, travel, stiffness, force, tolerance, or actuation note that reads as mechanically rigorous.",
-                "why": "The expired WDI mechanical role-shape reference centered mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering; verify a current open listing before applying.",
+                "why": "The verified WDI ride-development lead centers mechanical SME judgment, design review, safety, reliability, standards, kinematics, machine design, FEA/CAD, and prototype/development work.",
             },
             "creative_prototyping": {
                 "lane": key,
@@ -1763,7 +1767,7 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Tighten the Glendale profile.",
                 "body": "Convert one project into a role-fit artifact: title, thumbnail, 90-second story, technical figure, your contribution, and the next build.",
-                "why": "The active role asks for a portfolio that demonstrates a foundation in mechanical design.",
+                "why": "The verified WDI lead asks for advanced mechanical judgment, design sensibility, communication, and prototype/development evidence; principal scope remains unverified.",
             },
             "paper_system": {
                 "lane": key,
