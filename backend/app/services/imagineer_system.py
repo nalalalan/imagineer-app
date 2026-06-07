@@ -19,6 +19,11 @@ POSITIONING_LINE = (
     "for physical interaction systems."
 )
 PROFILE_UPDATED_AT = "2026-05-09T16:06:25+00:00"
+DISNEY_JOB_SEARCH_URL = (
+    "https://www.disneycareers.com/en/search-jobs?"
+    "keywords=Imagineering%20mechanical&location=Glendale%2C%20CA%2C%20United%20States"
+)
+EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 
 
 def _utc_now() -> str:
@@ -33,16 +38,16 @@ DEFAULT_STATE: dict[str, Any] = {
     "active_experiment_id": "autonomous-ai-reviewer-v0",
     "target": {
         "north_star_title": "Principal R&D Imagineer - Mechanical Engineer",
-        "active_rung_title": "WDI Research & Development Imagineer - Mechanical Design Engineer",
+        "active_rung_title": "WDI R&D mechanical Imagineering search lane",
         "company": "Walt Disney Imagineering R&D",
         "location": "Glendale, California",
-        "active_listing_job_id": "10146734",
-        "active_listing_posted": "2026-04-08",
-        "active_listing_url": "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
-        "active_listing_last_checked_at": "2026-05-27T13:16:08+00:00",
+        "active_listing_job_id": "",
+        "active_listing_posted": "",
+        "active_listing_url": DISNEY_JOB_SEARCH_URL,
+        "active_listing_state": "no_verified_live_listing",
+        "active_listing_last_checked_at": "2026-06-07T08:38:00+00:00",
         "active_listing_last_status_code": 404,
-        "active_listing_state": "unavailable_on_last_check",
-        "active_listing_note": "Both Disney Careers listing routes returned 404 on 2026-05-27; keep this as the recorded role-shape target until a current open posting is verified.",
+        "active_listing_note": "Disney job ID 10146734 / 93733641696 returned 404 / Job Not Found on 2026-06-07; keep it only as an expired role-shape reference until a destination page verifies live.",
         "north_star_note": "Use the principal title as the north-star profile; verify any open principal posting before applying.",
     },
     "positioning": POSITIONING_LINE,
@@ -71,7 +76,7 @@ DEFAULT_STATE: dict[str, Any] = {
         "approval_boundary": "The system can review, score, rewrite internal surfaces, and update public AO Labs pages. Human approval is required before applications, referral asks, direct outreach, or anything person-facing.",
         "source_urls": [
             "https://aolabs.io/",
-            "https://jobs.disneycareers.com/job/glendale/wdi-research-and-development-imagineer-mechanical-design-engineer/391/93733641696",
+            DISNEY_JOB_SEARCH_URL,
             "https://imagineer.aolabs.io/profile.html",
             "https://imagineer.aolabs.io/imagineer-autonomous-position-system.pdf",
             "https://cv.aolabs.io",
@@ -238,7 +243,7 @@ DEFAULT_STATE: dict[str, Any] = {
             "id": "seed-001",
             "created_at": "2026-05-06T12:00:00+00:00",
             "title": "Target locked",
-            "body": "Aim the system at WDI R&D in Glendale, with the active WDI R&D mechanical design role as the immediate live rung and Principal R&D Imagineer as the north star.",
+            "body": "Aim the system at WDI R&D in Glendale, with the mechanical Imagineering search lane as the immediate role-shape reference and Principal R&D Imagineer as the north star.",
             "tags": ["target", "application_packet"],
         },
         {
@@ -1306,7 +1311,26 @@ class ImagineerSystem:
         merged["target"] = {**copy.deepcopy(DEFAULT_STATE["target"]), **existing_target}
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
+        self._sanitize_expired_job_target(merged)
         return merged
+
+    def _sanitize_expired_job_target(self, state: dict[str, Any]) -> None:
+        target = state.setdefault("target", {})
+        target_text = " ".join(
+            str(target.get(key, ""))
+            for key in ("active_listing_job_id", "active_listing_url", "active_rung_title")
+        ).lower()
+        if any(job_id in target_text for job_id in EXPIRED_DISNEY_JOB_IDS) or target.get("active_listing_state") == "unavailable_on_last_check":
+            target.update(copy.deepcopy(DEFAULT_STATE["target"]))
+        reviewer = state.setdefault("reviewer", {})
+        source_urls = reviewer.get("source_urls", [])
+        if isinstance(source_urls, list):
+            clean_urls = [
+                str(url)
+                for url in source_urls
+                if not any(job_id in str(url) for job_id in EXPIRED_DISNEY_JOB_IDS)
+            ]
+            reviewer["source_urls"] = self._merge_unique_strings([DISNEY_JOB_SEARCH_URL], clean_urls)
 
     def _merge_unique_strings(self, *values: list[Any]) -> list[str]:
         merged: list[str] = []
@@ -1572,7 +1596,7 @@ class ImagineerSystem:
                 "selected_score": selected["score"],
                 "current_bottleneck": weakest["key"],
                 "inputs": [
-                    "active WDI mechanical design listing",
+                    "verified WDI mechanical job search lane",
                     "principal-scope north star",
                     "role-fit dimension scores",
                     "AO Labs public-source graph",
@@ -1711,7 +1735,7 @@ class ImagineerSystem:
                 "lane": key,
                 "title": "Make one mechanism calculation visible.",
                 "body": "Pick one Sarrus or FluxCell mechanism and publish a compact load, travel, stiffness, force, tolerance, or actuation note that reads as mechanically rigorous.",
-                "why": "The recorded role shape asks for mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering; verify a current open listing before applying.",
+                "why": "The expired WDI mechanical role-shape reference centered mechanical design, prototyping, loads, moments, forces, CAD, FEA/GD&T, and hands-on engineering; verify a current open listing before applying.",
             },
             "creative_prototyping": {
                 "lane": key,
