@@ -49,9 +49,9 @@ DEFAULT_STATE: dict[str, Any] = {
         "active_listing_posted": "2026-06-01",
         "active_listing_url": VERIFIED_DISNEY_JOB_URL,
         "active_listing_state": "verified_live_listing",
-        "active_listing_last_checked_at": "2026-06-07T09:18:19+00:00",
+        "active_listing_last_checked_at": "2026-06-08T09:17:19+00:00",
         "active_listing_last_status_code": 200,
-        "active_listing_note": "Disney Careers destination verified live on 2026-06-07: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
+        "active_listing_note": "Disney Careers destination verified live on 2026-06-08 at 5:17 AM ET: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
         "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride-development design assurance, not proof of R&D hiring fit.",
     },
     "positioning": POSITIONING_LINE,
@@ -688,6 +688,7 @@ class ImagineerSystem:
     def _latest_profile_timestamp(self, state: dict[str, Any]) -> str:
         candidates = [
             state.get("profile_record", {}).get("updated_at") if isinstance(state.get("profile_record"), dict) else "",
+            state.get("target", {}).get("active_listing_last_checked_at") if isinstance(state.get("target"), dict) else "",
         ]
         for collection in ("reviews", "events", "journal"):
             items = state.get(collection, [])
@@ -1313,10 +1314,43 @@ class ImagineerSystem:
         if not isinstance(existing_target, dict):
             existing_target = {}
         merged["target"] = {**copy.deepcopy(DEFAULT_STATE["target"]), **existing_target}
+        self._refresh_active_listing_target(merged)
         self._merge_list_by_key(merged, "portfolio", "name")
         self._merge_list_by_key(merged, "experiments", "id")
         self._sanitize_expired_job_target(merged)
         return merged
+
+    def _refresh_active_listing_target(self, state: dict[str, Any]) -> None:
+        target = state.setdefault("target", {})
+        default_target = DEFAULT_STATE["target"]
+        if target.get("active_listing_job_id") != default_target.get("active_listing_job_id"):
+            return
+        if target.get("active_listing_url") != default_target.get("active_listing_url"):
+            return
+        target_checked = self._parse_timestamp(target.get("active_listing_last_checked_at"))
+        default_checked = self._parse_timestamp(default_target.get("active_listing_last_checked_at"))
+        if default_checked and (target_checked is None or default_checked > target_checked):
+            for key in (
+                "active_listing_state",
+                "active_listing_last_checked_at",
+                "active_listing_last_status_code",
+                "active_listing_note",
+                "active_listing_posted",
+                "active_rung_title",
+                "company",
+                "location",
+            ):
+                target[key] = copy.deepcopy(default_target[key])
+
+    def _parse_timestamp(self, value: Any) -> datetime | None:
+        try:
+            text = str(value or "").replace("Z", "+00:00")
+            item = datetime.fromisoformat(text)
+        except (TypeError, ValueError):
+            return None
+        if item.tzinfo is None:
+            item = item.replace(tzinfo=timezone.utc)
+        return item.astimezone(timezone.utc)
 
     def _sanitize_expired_job_target(self, state: dict[str, Any]) -> None:
         target = state.setdefault("target", {})
