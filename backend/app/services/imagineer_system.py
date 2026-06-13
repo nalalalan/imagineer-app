@@ -21,7 +21,7 @@ POSITIONING_LINE = (
 PROFILE_UPDATED_AT = "2026-05-09T16:06:25+00:00"
 DISNEY_JOB_SEARCH_URL = (
     "https://www.disneycareers.com/en/search-jobs?"
-    "keywords=Imagineering%20mechanical&location=Glendale%2C%20CA%2C%20United%20States"
+    "k=Imagineering%20mechanical&l=Glendale%2C%20CA%2C%20United%20States"
 )
 VERIFIED_DISNEY_JOB_URL = (
     "https://www.disneycareers.com/en/job/glendale/"
@@ -49,9 +49,9 @@ DEFAULT_STATE: dict[str, Any] = {
         "active_listing_posted": "2026-06-01",
         "active_listing_url": VERIFIED_DISNEY_JOB_URL,
         "active_listing_state": "verified_live_listing",
-        "active_listing_last_checked_at": "2026-06-12T13:15:55+00:00",
+        "active_listing_last_checked_at": "2026-06-13T13:17:18+00:00",
         "active_listing_last_status_code": 200,
-        "active_listing_note": "Disney Careers destination verified live on 2026-06-12 at 9:15 AM ET: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
+        "active_listing_note": "Disney Careers destination verified live on 2026-06-13 at 9:17 AM ET: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
         "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride-development design assurance, not proof of R&D hiring fit.",
     },
     "positioning": POSITIONING_LINE,
