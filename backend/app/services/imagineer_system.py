@@ -1432,7 +1432,17 @@ class ImagineerSystem:
         default_checked = self._parse_timestamp(default_target.get("active_listing_last_checked_at"))
         url_changed = target.get("active_listing_url") != default_target.get("active_listing_url")
         default_newer = bool(default_checked and (target_checked is None or default_checked > target_checked))
-        if url_changed or default_newer:
+        source_fields_changed = any(
+            target.get(key) != default_target.get(key)
+            for key in (
+                "active_rung_title",
+                "company",
+                "location",
+                "active_listing_posted",
+                "north_star_note",
+            )
+        )
+        if url_changed or default_newer or source_fields_changed:
             for key in (
                 "active_listing_url",
                 "active_listing_state",
