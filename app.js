@@ -10,7 +10,8 @@ const fallbackStep = {
   body: "Actuator-less array, clip-programmed shape, overhang motion check.",
   why: "The current source names the prototype path; visible ownership now needs a measured first build.",
   time: "7 minutes",
-  href: "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit",
+  href: "#proof-capture",
+  linkLabel: "Start proof",
   source: "Fallback step. Progress state did not load.",
   updatedAt: new Date().toISOString(),
 };
@@ -30,11 +31,13 @@ function setVisible(selector, visible) {
 async function request(url, options = {}) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), options.timeout || 9000);
+  const hasBody = Object.prototype.hasOwnProperty.call(options, "body");
   try {
     const response = await fetch(url, {
       method: options.method || "GET",
       cache: "no-store",
-      headers: { "Content-Type": "application/json" },
+      headers: hasBody ? { "Content-Type": "application/json" } : undefined,
+      body: hasBody ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -108,6 +111,7 @@ function render(step, ops, progress) {
   }
 
   renderLifeLoop(ops?.life_loop || fallbackLifeLoop(step, ops));
+  renderProofCapture(ops, step);
 }
 
 function fallbackLifeLoop(step, ops) {
@@ -174,6 +178,151 @@ function renderLifeItem(item) {
   return row;
 }
 
+function renderProofCapture(ops, step) {
+  const capture = ops?.proof_capture;
+  const reviewer = ops?.reviewer_state || ops?.reviewer?.review_state;
+  const lead = ops?.lead_verification;
+
+  setText("#proof-capture-status", capture?.current_step || "Add one measured FluxCell proof and let the app remember it.");
+  setText("#proof-sync-targets", capture?.sync_targets?.join(", ") || "profile, CV, paper, Progress");
+
+  const sourceDoc = $("#proof-source-doc");
+  if (sourceDoc) {
+    const sourceDocHref = ops?.decision_system?.candidates?.find((item) => item.id === step.decision_id)?.source_doc
+      || "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit";
+    sourceDoc.href = sourceDocHref;
+  }
+
+  const rows = $("#proof-state-rows");
+  if (rows) {
+    const latest = capture?.latest;
+    const items = [
+      {
+        label: "Latest proof",
+        value: latest ? formatDateTime(latest.created_at) : "none logged",
+        detail: latest?.measurement || latest?.changed || latest?.notes || "FluxCell proof capture is ready.",
+      },
+      {
+        label: "Reviewer",
+        value: reviewer?.label || "Review state unavailable",
+        detail: reviewer?.action || "Capture proof before the next review.",
+      },
+      {
+        label: "Lead",
+        value: lead?.status ? `${lead.status}${lead.age_days != null ? `, ${lead.age_days}d` : ""}` : "lead check unavailable",
+        detail: lead?.action || "Verify the clicked Disney destination before lead-facing use.",
+      },
+    ];
+    rows.replaceChildren(...items.map(renderProofRow));
+  }
+}
+
+function renderProofRow(item) {
+  const row = document.createElement("div");
+
+  const label = document.createElement("dt");
+  label.textContent = clean(item.label);
+
+  const value = document.createElement("dd");
+  const strong = document.createElement("strong");
+  strong.textContent = clean(item.value);
+  const detail = document.createElement("span");
+  detail.textContent = clean(item.detail);
+  value.append(strong, detail);
+
+  row.append(label, value);
+  return row;
+}
+
+async function handleProofSubmit(event) {
+  event.preventDefault();
+  const status = $("#proof-form-status");
+  const submit = $("#proof-submit");
+  const file = $("#proof-file")?.files?.[0] || null;
+  const body = {
+    note: $("#proof-note")?.value || "",
+    measurement: $("#proof-measurement")?.value || "",
+    changed: $("#proof-changed")?.value || "",
+    failure: $("#proof-failure")?.value || "",
+    next_update: $("#proof-next")?.value || "",
+    link: $("#proof-link")?.value || "",
+  };
+  const hasText = Object.values(body).some((value) => String(value || "").trim());
+  if (!hasText && !file) {
+    if (status) status.textContent = "Add a note, measurement, link, or file.";
+    return;
+  }
+
+  if (submit) submit.disabled = true;
+  if (status) status.textContent = "Logging proof.";
+  try {
+    const filePayload = file ? await fileToPayload(file) : {};
+    const result = await request(`${apiBase}/api/imagineer/proofs`, {
+      method: "POST",
+      timeout: 30000,
+      body: { ...body, ...filePayload },
+    });
+    if (result?.ops) {
+      render(bestStep(result.ops, null), result.ops, null);
+    }
+    $("#proof-form")?.reset();
+    if (status) status.textContent = "Proof logged. Runtime profile and journal state updated.";
+  } catch (error) {
+    if (status) status.textContent = "Proof did not log. Check file size or route.";
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+
+async function handleLeadCheck() {
+  const status = $("#proof-form-status");
+  const button = $("#lead-check");
+  if (button) button.disabled = true;
+  if (status) status.textContent = "Checking Disney destination.";
+  try {
+    const result = await request(`${apiBase}/api/imagineer/lead-check/run`, {
+      method: "POST",
+      timeout: 20000,
+      body: {},
+    });
+    if (result?.ops) {
+      render(bestStep(result.ops, null), result.ops, null);
+    }
+    if (status) status.textContent = result?.ok ? "Lead destination verified." : "Lead check completed; lead is not current.";
+  } catch (error) {
+    if (status) status.textContent = "Lead check did not complete.";
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function fileToPayload(file) {
+  if (file.size > 12 * 1024 * 1024) {
+    throw new Error("file_too_large");
+  }
+  return {
+    artifact_name: file.name,
+    artifact_type: file.type.startsWith("image/")
+      ? "photo"
+      : file.type.startsWith("video/")
+        ? "video"
+        : file.type === "application/pdf"
+          ? "PDF"
+          : "text file",
+    artifact_mime: file.type || "text/plain",
+    artifact_data: await readAsDataUrl(file),
+  };
+}
+
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("read_failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 function clean(value) {
   const legacyPacketLabel = ["proof", "packet"].join(" ");
   const legacyPacketTitle = ["Proof", "packet"].join(" ");
@@ -203,4 +352,6 @@ function formatDateTime(value) {
 }
 
 $("#refresh")?.addEventListener("click", loadState);
+$("#proof-form")?.addEventListener("submit", handleProofSubmit);
+$("#lead-check")?.addEventListener("click", handleLeadCheck);
 loadState().catch(() => render(fallbackStep, null, null));

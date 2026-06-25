@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import html
 import json
@@ -29,6 +31,18 @@ VERIFIED_DISNEY_JOB_URL = (
 )
 A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
+MAX_PROOF_UPLOAD_BYTES = 12 * 1024 * 1024
+PROOF_SYNC_TARGETS = ["profile", "CV", "paper", "Progress"]
+PROOF_TAGS = ["proof", "fluxcell", "mechanical_depth", "leadership_network", "paper_system", "reviewer_ready"]
+PROOF_MIME_EXTENSIONS = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+    "video/mp4": ".mp4",
+    "video/quicktime": ".mov",
+    "application/pdf": ".pdf",
+    "text/plain": ".txt",
+}
 
 
 def _utc_now() -> str:
@@ -243,6 +257,7 @@ DEFAULT_STATE: dict[str, Any] = {
     ],
     "events": [],
     "reviews": [],
+    "lead_checks": [],
     "journal": [
         {
             "id": "seed-001",
@@ -269,6 +284,7 @@ class ImagineerSystem:
             configured = os.getenv("IMAGINEER_STATE_PATH", "").strip()
             state_path = configured or Path.cwd() / ".runtime" / "imagineer_state.json"
         self.state_path = Path(state_path)
+        self.proof_upload_dir = self.state_path.parent / "proof_uploads"
         self._state_lock = threading.RLock()
 
     def ops_check(self) -> dict[str, Any]:
@@ -296,6 +312,8 @@ class ImagineerSystem:
             fit_score=fit_score,
             a3_snapshot=a3_snapshot,
         )
+        reviewer = self._reviewer_report_from_state(state, compact=True)
+        lead_verification = self._lead_verification_state(state)
 
         return {
             "status": "building_position_machine_v1",
@@ -308,8 +326,11 @@ class ImagineerSystem:
             "next_action": next_action,
             "personal_step": personal_step,
             "life_loop": life_loop,
+            "proof_capture": self._proof_capture_state(state),
+            "lead_verification": lead_verification,
             "decision_system": step_decision["system"],
-            "reviewer": self._reviewer_report_from_state(state, compact=True),
+            "reviewer": reviewer,
+            "reviewer_state": reviewer.get("review_state"),
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
             "evidence": {
@@ -334,10 +355,11 @@ class ImagineerSystem:
             },
             "system_health": {
                 "state_path": str(self.state_path),
+                "proof_upload_dir": str(self.proof_upload_dir),
                 "openai_planner": bool(os.getenv("OPENAI_API_KEY")),
                 "openai_model": self._openai_model() if os.getenv("OPENAI_API_KEY") else None,
                 "storage": "json_runtime_state",
-                "write_surface": "events_and_ai_reviews",
+                "write_surface": "events_proofs_lead_checks_and_ai_reviews",
             },
         }
 
@@ -460,7 +482,7 @@ class ImagineerSystem:
             self._append_journal_from_event(state, event)
             self._touch_profile_record(state, review["created_at"], source_count=len(sources))
             self._save_state(state)
-            return {"ok": True, "review": review, "ops": self.ops_check()}
+            return {"ok": True, "review": self._compact_review(review), "ops": self.ops_check()}
 
     def run_weekly_paper_update(self) -> dict[str, Any]:
         with self._state_lock:
@@ -497,6 +519,72 @@ class ImagineerSystem:
             self._touch_profile_record(state, event["created_at"])
             self._save_state(state)
             return {"ok": True, "event": event, "ops": self.ops_check()}
+
+    def record_proof_capture(self, payload: dict[str, Any]) -> dict[str, Any]:
+        with self._state_lock:
+            state = self._load_state()
+            artifact = self._save_proof_artifact(payload)
+            proof_fields = self._proof_fields(payload)
+            event_payload = {
+                "kind": "proof",
+                "title": "FluxCell proof captured",
+                "notes": self._proof_notes(proof_fields, artifact),
+                "link": artifact.get("route") if artifact else str(payload.get("link") or "").strip(),
+                "tags": PROOF_TAGS,
+                "impact": 4,
+            }
+            event = self._event_from_payload(event_payload)
+            event["proof_capture"] = {
+                "fields": proof_fields,
+                "sync_targets": PROOF_SYNC_TARGETS,
+                "sync_state": "runtime_profile_journal_updated",
+            }
+            if artifact:
+                event["artifact"] = artifact
+            state["events"].insert(0, event)
+            state["events"] = state["events"][:300]
+            self._append_journal_from_event(state, event)
+            self._touch_profile_record(state, event["created_at"])
+            self._save_state(state)
+            return {
+                "ok": True,
+                "proof": event,
+                "sync": self._proof_sync_plan(event),
+                "ops": self.ops_check(),
+            }
+
+    def proof_artifact_path(self, filename: str) -> Path | None:
+        clean = self._safe_filename(filename)
+        if not clean or clean != filename:
+            return None
+        path = (self.proof_upload_dir / clean).resolve()
+        try:
+            path.relative_to(self.proof_upload_dir.resolve())
+        except ValueError:
+            return None
+        if not path.exists() or not path.is_file():
+            return None
+        return path
+
+    def run_lead_check(self) -> dict[str, Any]:
+        with self._state_lock:
+            state = self._load_state()
+            result = self._check_active_listing_destination(state)
+            state.setdefault("lead_checks", []).insert(0, result)
+            state["lead_checks"] = state["lead_checks"][:40]
+            if result.get("listing_state") in {"verified_live_listing", "unavailable_on_last_check"}:
+                target = state.setdefault("target", {})
+                target["active_listing_state"] = result["listing_state"]
+                target["active_listing_last_checked_at"] = result["checked_at"]
+                target["active_listing_last_status_code"] = result.get("status_code")
+                target["active_listing_note"] = result.get("note", "")
+            self._save_state(state)
+            return {
+                "ok": bool(result.get("ok")),
+                "lead_check": result,
+                "lead_verification": self._lead_verification_state(state),
+                "ops": self.ops_check(),
+            }
 
     def run_daily_cycle(self) -> dict[str, Any]:
         with self._state_lock:
@@ -733,10 +821,12 @@ class ImagineerSystem:
 
     def _reviewer_report_from_state(self, state: dict[str, Any], compact: bool = False) -> dict[str, Any]:
         latest = next(iter(state.get("reviews", [])), None)
+        review_state = self._review_public_state(latest)
         report = {
             "mode": state.get("reviewer", {}).get("mode", "autonomous_ai"),
             "scope": state.get("reviewer", {}).get("scope", "whole_public_ao_labs_graph"),
-            "status": "review_ready" if latest else "not_run",
+            "status": review_state["status"],
+            "review_state": review_state,
             "approval_boundary": state.get("reviewer", {}).get("approval_boundary", ""),
             "latest": self._compact_review(latest) if latest else None,
             "review_count": len(state.get("reviews", [])),
@@ -746,7 +836,7 @@ class ImagineerSystem:
             return report
         return {
             **report,
-            "reviews": state.get("reviews", [])[:10],
+            "reviews": [self._compact_review(review) for review in state.get("reviews", [])[:10]],
             "source_urls": state.get("reviewer", {}).get("source_urls", []),
         }
 
@@ -754,7 +844,7 @@ class ImagineerSystem:
         if not review:
             return None
         next_actions = review.get("next_actions") or []
-        return {
+        compact = {
             "id": review.get("id"),
             "created_at": review.get("created_at"),
             "score": review.get("score"),
@@ -782,8 +872,64 @@ class ImagineerSystem:
             "next_action": next_actions[0] if next_actions else None,
             "source_count": review.get("source_count"),
             "model": review.get("model"),
-            "fallback_reason": review.get("fallback_reason"),
         }
+        fallback_state = self._fallback_state(review.get("fallback_reason"))
+        if fallback_state:
+            compact["fallback_state"] = fallback_state
+            compact["fallback_note"] = "AI review did not complete; deterministic fallback used."
+        return compact
+
+    def _review_public_state(self, latest: dict[str, Any] | None) -> dict[str, Any]:
+        if not latest:
+            return {
+                "status": "not_run",
+                "label": "Review not run",
+                "action": "Run review after proof capture.",
+                "last_review_at": None,
+                "age_days": None,
+            }
+        created = self._parse_timestamp(latest.get("created_at"))
+        age_days = None
+        if created:
+            age_days = max(0, (datetime.now(timezone.utc) - created).days)
+        fallback_state = self._fallback_state(latest.get("fallback_reason"))
+        stale = age_days is None or age_days > 30
+        if stale and fallback_state:
+            status = "stale_fallback"
+            label = "Review stale; fallback used"
+            action = "Capture current FluxCell proof before another review."
+        elif stale:
+            status = "stale"
+            label = "Review stale"
+            action = "Run review after the current proof changes."
+        elif fallback_state:
+            status = "fallback"
+            label = "Fallback review"
+            action = "Retry review after proof capture."
+        else:
+            status = "review_ready"
+            label = "Review current"
+            action = "Use review as current critique."
+        return {
+            "status": status,
+            "label": label,
+            "action": action,
+            "last_review_at": latest.get("created_at"),
+            "age_days": age_days,
+            "fallback_state": fallback_state,
+        }
+
+    def _fallback_state(self, reason: Any) -> str | None:
+        text = str(reason or "").strip().lower()
+        if not text:
+            return None
+        if "quota" in text or "rate" in text or "429" in text:
+            return "quota_or_rate_limit"
+        if "timeout" in text:
+            return "timeout"
+        if "api" in text or "openai" in text or "provider" in text:
+            return "provider_unavailable"
+        return "fallback_used"
 
     def _collect_review_sources(self, state: dict[str, Any], ops: dict[str, Any]) -> list[dict[str, Any]]:
         sources: list[dict[str, Any]] = []
@@ -1306,7 +1452,7 @@ class ImagineerSystem:
         merged = copy.deepcopy(DEFAULT_STATE)
         for key, value in state.items():
             merged[key] = value
-        for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "reviews", "journal", "weekly_papers"):
+        for list_key in ("dimensions", "experiments", "portfolio", "guardrails", "events", "reviews", "lead_checks", "journal", "weekly_papers"):
             merged.setdefault(list_key, copy.deepcopy(DEFAULT_STATE[list_key]))
         existing_reviewer = state.get("reviewer", {})
         if not isinstance(existing_reviewer, dict):
@@ -1633,6 +1779,254 @@ class ImagineerSystem:
             }
         return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
 
+    def _proof_capture_state(self, state: dict[str, Any]) -> dict[str, Any]:
+        proofs = [
+            event
+            for event in state.get("events", [])
+            if event.get("kind") == "proof" and ("fluxcell" in event.get("tags", []) or "FluxCell" in str(event.get("title", "")))
+        ]
+        latest = proofs[0] if proofs else None
+        return {
+            "title": "FluxCell proof capture",
+            "status": "proof_logged" if latest else "ready_for_capture",
+            "endpoint": "/api/imagineer/proofs",
+            "current_step": "Add one note, measurement, route, photo, video, PDF, or text file from the FluxCell linkage test.",
+            "artifact_types": ["note", "measurement", "route", "photo", "video", "PDF", "text file"],
+            "sync_targets": PROOF_SYNC_TARGETS,
+            "latest": self._compact_proof(latest),
+        }
+
+    def _compact_proof(self, event: dict[str, Any] | None) -> dict[str, Any] | None:
+        if not event:
+            return None
+        artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
+        fields = {}
+        capture = event.get("proof_capture") if isinstance(event.get("proof_capture"), dict) else {}
+        if isinstance(capture.get("fields"), dict):
+            fields = capture["fields"]
+        return {
+            "id": event.get("id"),
+            "created_at": event.get("created_at"),
+            "title": event.get("title"),
+            "notes": event.get("notes"),
+            "link": event.get("link"),
+            "artifact_route": artifact.get("route"),
+            "artifact_type": artifact.get("type"),
+            "measurement": fields.get("measurement"),
+            "changed": fields.get("changed"),
+        }
+
+    def _proof_fields(self, payload: dict[str, Any]) -> dict[str, str]:
+        fields = {
+            "note": str(payload.get("note") or "").strip(),
+            "measurement": str(payload.get("measurement") or "").strip(),
+            "changed": str(payload.get("changed") or "").strip(),
+            "failure": str(payload.get("failure") or "").strip(),
+            "next_update": str(payload.get("next_update") or "").strip(),
+            "link": str(payload.get("link") or "").strip(),
+        }
+        return {key: value for key, value in fields.items() if value}
+
+    def _proof_notes(self, fields: dict[str, str], artifact: dict[str, Any] | None) -> str:
+        parts = []
+        if fields.get("changed"):
+            parts.append(f"Changed: {fields['changed']}.")
+        if fields.get("measurement"):
+            parts.append(f"Measurement/result: {fields['measurement']}.")
+        if fields.get("note"):
+            parts.append(f"Note: {fields['note']}")
+        if fields.get("failure"):
+            parts.append(f"Failure/limit: {fields['failure']}.")
+        if fields.get("next_update"):
+            parts.append(f"Next update: {fields['next_update']}.")
+        if fields.get("link"):
+            parts.append(f"Source route: {fields['link']}.")
+        if artifact:
+            parts.append(f"Artifact: {artifact.get('name')} ({artifact.get('type')}).")
+        if not parts:
+            raise ValueError("Add a note, measurement, link, or file before logging proof.")
+        parts.append("Runtime profile and journal state updated; next public sync targets: profile, CV, paper, Progress.")
+        return " ".join(parts)[:4000]
+
+    def _proof_sync_plan(self, event: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "state": "runtime_profile_journal_updated",
+            "event_id": event.get("id"),
+            "targets": PROOF_SYNC_TARGETS,
+            "remaining": ["static CV PDF", "static paper PDF", "Progress public event"],
+        }
+
+    def _save_proof_artifact(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        data_url = str(payload.get("artifact_data") or "").strip()
+        if not data_url:
+            return None
+        if ";base64," not in data_url:
+            raise ValueError("Proof artifact must be a base64 data URL.")
+        header, encoded = data_url.split(";base64,", 1)
+        mime = str(payload.get("artifact_mime") or header.replace("data:", "") or "application/octet-stream").strip().lower()
+        if mime not in PROOF_MIME_EXTENSIONS:
+            raise ValueError("Unsupported proof artifact type.")
+        try:
+            content = base64.b64decode(encoded, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ValueError("Proof artifact could not be decoded.") from exc
+        if not content:
+            raise ValueError("Proof artifact is empty.")
+        if len(content) > MAX_PROOF_UPLOAD_BYTES:
+            raise ValueError("Proof artifact is over the 12 MB limit.")
+
+        original_name = self._safe_filename(str(payload.get("artifact_name") or "proof-artifact"))
+        suffix = PROOF_MIME_EXTENSIONS[mime]
+        stem = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
+        stem = stem or "proof-artifact"
+        filename = self._safe_filename(f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}-{stem}{suffix}")
+        self.proof_upload_dir.mkdir(parents=True, exist_ok=True)
+        path = self.proof_upload_dir / filename
+        path.write_bytes(content)
+        artifact_type = str(payload.get("artifact_type") or "").strip() or self._artifact_type_from_mime(mime)
+        route = f"/api/imagineer/proofs/{filename}"
+        return {
+            "name": original_name,
+            "filename": filename,
+            "route": route,
+            "type": artifact_type,
+            "mime": mime,
+            "bytes": len(content),
+        }
+
+    def _safe_filename(self, value: str) -> str:
+        name = Path(str(value or "")).name
+        name = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip(".-_")
+        return name[:140]
+
+    def _artifact_type_from_mime(self, mime: str) -> str:
+        if mime.startswith("image/"):
+            return "photo"
+        if mime.startswith("video/"):
+            return "video"
+        if mime == "application/pdf":
+            return "PDF"
+        return "text file"
+
+    def _lead_verification_state(self, state: dict[str, Any]) -> dict[str, Any]:
+        target = state.get("target") if isinstance(state.get("target"), dict) else {}
+        checked_at = self._parse_timestamp(target.get("active_listing_last_checked_at"))
+        now = datetime.now(timezone.utc)
+        age_days = None
+        if checked_at:
+            age_days = max(0, (now - checked_at).days)
+        is_current = checked_at is not None and age_days is not None and age_days <= 7 and target.get("active_listing_state") == "verified_live_listing"
+        status = "current" if is_current else "stale"
+        latest_check = next(iter(state.get("lead_checks", [])), None)
+        if target.get("active_listing_state") == "unavailable_on_last_check":
+            status = "unavailable"
+        action = "Verify the clicked Disney destination before lead-facing use."
+        effective_listing_state = target.get("active_listing_state")
+        latest_checked_at = self._parse_timestamp(latest_check.get("checked_at")) if isinstance(latest_check, dict) else None
+        if isinstance(latest_check, dict) and latest_checked_at and (checked_at is None or latest_checked_at >= checked_at):
+            latest_state = str(latest_check.get("listing_state") or "")
+            effective_listing_state = latest_state or effective_listing_state
+            if latest_state == "verified_live_listing":
+                status = "current"
+                action = "Clicked Disney destination verified."
+            elif latest_state == "verification_mismatch":
+                status = "mismatch"
+                action = "Fresh destination check did not match title/company/location; do not use as a lead yet."
+            elif latest_state == "verification_unavailable":
+                status = "unverified"
+                action = "Fresh destination check did not complete; do not use as a lead yet."
+            elif latest_state == "unavailable_on_last_check":
+                status = "unavailable"
+                action = "Fresh destination check found the lead unavailable."
+        return {
+            "status": status,
+            "listing_state": effective_listing_state,
+            "title": target.get("active_rung_title"),
+            "company": target.get("company"),
+            "location": target.get("location"),
+            "url": target.get("active_listing_url"),
+            "last_checked_at": target.get("active_listing_last_checked_at"),
+            "age_days": age_days,
+            "last_status_code": target.get("active_listing_last_status_code"),
+            "action": action,
+            "latest_check": latest_check,
+        }
+
+    def _check_active_listing_destination(self, state: dict[str, Any]) -> dict[str, Any]:
+        target = state.get("target") if isinstance(state.get("target"), dict) else {}
+        url = str(target.get("active_listing_url") or VERIFIED_DISNEY_JOB_URL).strip()
+        checked_at = _utc_now()
+        status_code = 0
+        body = ""
+        try:
+            request = Request(
+                url,
+                headers={
+                    "User-Agent": "AO-Labs-Imagineer-Lead-Verifier/1.0",
+                    "Accept": "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.3",
+                },
+            )
+            with urlopen(request, timeout=10) as response:
+                status_code = int(getattr(response, "status", 200) or 200)
+                body = response.read(260_000).decode("utf-8", errors="ignore")
+        except HTTPError as exc:
+            status_code = int(exc.code or 0)
+            try:
+                body = exc.read(120_000).decode("utf-8", errors="ignore")
+            except Exception:
+                body = ""
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            return {
+                "ok": False,
+                "checked_at": checked_at,
+                "url": url,
+                "status_code": status_code,
+                "listing_state": "verification_unavailable",
+                "note": f"Destination verification did not complete: {type(exc).__name__}.",
+            }
+
+        text = self._html_to_text(body)
+        lowered = text.lower()
+        unavailable = status_code == 404 or "job not found" in lowered or "no longer available" in lowered
+        matched = self._lead_destination_match(text, target)
+        if matched and not unavailable:
+            return {
+                "ok": True,
+                "checked_at": checked_at,
+                "url": url,
+                "status_code": status_code,
+                "listing_state": "verified_live_listing",
+                "note": "Disney Careers destination verified live with matching title, company, and location. Lead only; no application, outreach, referral, relationship, or hiring claim.",
+            }
+        if unavailable:
+            return {
+                "ok": False,
+                "checked_at": checked_at,
+                "url": url,
+                "status_code": status_code,
+                "listing_state": "unavailable_on_last_check",
+                "note": "Disney Careers destination is unavailable or says Job Not Found.",
+            }
+        return {
+            "ok": False,
+            "checked_at": checked_at,
+            "url": url,
+            "status_code": status_code,
+            "listing_state": "verification_mismatch",
+            "note": "Destination loaded, but title/company/location did not all match the tracked lead.",
+        }
+
+    def _lead_destination_match(self, text: str, target: dict[str, Any]) -> bool:
+        lowered = text.lower()
+        title = str(target.get("active_rung_title") or "Principal Ride Development Engineer, Design Assurance").lower()
+        title_parts = [part.strip() for part in re.split(r"[,;-]", title) if part.strip()]
+        company = str(target.get("company") or "Walt Disney Imagineering").lower()
+        location = str(target.get("location") or "Glendale").lower()
+        title_ok = title in lowered or all(part in lowered for part in title_parts[:2])
+        company_ok = company in lowered or "walt disney imagineering" in lowered
+        location_ok = "glendale" in lowered or location in lowered
+        return bool(title_ok and company_ok and location_ok)
+
     def _life_loop(
         self,
         *,
@@ -1742,6 +2136,7 @@ class ImagineerSystem:
             "why": selected["why"],
             "time": selected["time"],
             "href": selected["href"],
+            "linkLabel": selected.get("link_label") or "Open",
             "source": (
                 f"Principal signal {self._dimension_score(dimensions, 'leadership_network')}/100. "
                 f"Decision score {selected['score']}/100."
@@ -1789,7 +2184,9 @@ class ImagineerSystem:
                     "The current source names the prototype path; visible ownership now needs a measured first build."
                 ),
                 "time": "7 minutes",
-                "href": phd_doc,
+                "href": "#proof-capture",
+                "link_label": "Start proof",
+                "source_doc": phd_doc,
                 "urgency": "current ownership is the live failure point",
                 "role_alignment": 24,
                 "bottleneck_relief": 24,

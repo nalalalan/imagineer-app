@@ -28,6 +28,19 @@ class ImagineerEvent(BaseModel):
     impact: int = Field(default=1, ge=1, le=5)
 
 
+class ProofCapture(BaseModel):
+    note: str | None = Field(default=None, max_length=4000)
+    measurement: str | None = Field(default=None, max_length=1200)
+    changed: str | None = Field(default=None, max_length=280)
+    failure: str | None = Field(default=None, max_length=1200)
+    next_update: str | None = Field(default=None, max_length=1200)
+    link: str | None = Field(default=None, max_length=800)
+    artifact_name: str | None = Field(default=None, max_length=180)
+    artifact_type: str | None = Field(default=None, max_length=80)
+    artifact_mime: str | None = Field(default=None, max_length=120)
+    artifact_data: str | None = Field(default=None, max_length=18_000_000)
+
+
 def _cors_origins() -> list[str]:
     defaults = [
         "https://aolabs.io",
@@ -106,6 +119,27 @@ def ai_review_run() -> dict[str, Any]:
 @app.post("/api/imagineer/events")
 def record_event(event: ImagineerEvent) -> dict[str, Any]:
     return SYSTEM.record_event(event.model_dump())
+
+
+@app.post("/api/imagineer/proofs")
+def record_proof(proof: ProofCapture) -> dict[str, Any]:
+    try:
+        return SYSTEM.record_proof_capture(proof.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/api/imagineer/proofs/{filename}")
+def proof_artifact(filename: str) -> FileResponse:
+    path = SYSTEM.proof_artifact_path(filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail="proof artifact not found")
+    return FileResponse(path)
+
+
+@app.post("/api/imagineer/lead-check/run")
+def lead_check_run() -> dict[str, Any]:
+    return SYSTEM.run_lead_check()
 
 
 @app.post("/api/imagineer/daily-cycle")
