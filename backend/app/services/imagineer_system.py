@@ -1428,12 +1428,13 @@ class ImagineerSystem:
         default_target = DEFAULT_STATE["target"]
         if target.get("active_listing_job_id") != default_target.get("active_listing_job_id"):
             return
-        if target.get("active_listing_url") != default_target.get("active_listing_url"):
-            return
         target_checked = self._parse_timestamp(target.get("active_listing_last_checked_at"))
         default_checked = self._parse_timestamp(default_target.get("active_listing_last_checked_at"))
-        if default_checked and (target_checked is None or default_checked > target_checked):
+        url_changed = target.get("active_listing_url") != default_target.get("active_listing_url")
+        default_newer = bool(default_checked and (target_checked is None or default_checked > target_checked))
+        if url_changed or default_newer:
             for key in (
+                "active_listing_url",
                 "active_listing_state",
                 "active_listing_last_checked_at",
                 "active_listing_last_status_code",
