@@ -131,7 +131,7 @@ DEFAULT_STATE: dict[str, Any] = {
         "builder_pattern": [
             "AO Labs turns projects into public surfaces, papers, dashboards, media walls, and autonomous loops.",
             "Relay shows the user's preference for operational systems with metrics, state, experiments, logs, and money/result tracking.",
-            "Imagineer should use the same operational style for career conversion: source intake, critique, state updates, and logged progress.",
+            "Imagineer should use the same operational style for career conversion: source evidence, critique, state updates, and logged progress.",
         ],
         "wdi_relevance": [
             "Strongest fit is embodied creative R&D: mechanisms that produce readable physical motion, shape change, responsiveness, surprise, or believable object behavior.",
@@ -1757,7 +1757,7 @@ class ImagineerSystem:
         topics = self._phd_topic_flags(notes)
         status = "current" if app_state.get("ok") or files_state.get("ok") else "unavailable"
         note_detail = (
-            "PhD notes are the career-source intake."
+            "PhD notes are current."
             if app_state.get("ok")
             else f"PhD notes unavailable: {app_state.get('error', 'unknown')}."
         )
@@ -1765,9 +1765,9 @@ class ImagineerSystem:
             note_detail = f"Active source flags: {', '.join(topics)}."
 
         return {
-            "title": "PhD source intake",
+            "title": "Source state",
             "status": status,
-            "current_step": "Capture notes and files in PhD; Imagineer reads that source graph into career state.",
+            "current_step": "Capture notes and files in PhD.",
             "sync_targets": SOURCE_SYNC_TARGETS,
             "primary_source": {
                 "name": "phd",
@@ -1783,7 +1783,7 @@ class ImagineerSystem:
                 "status": "current" if files_state.get("ok") else "unavailable",
                 "file_count": len(files) if files_state.get("ok") else None,
                 "latest_file_at": latest_file_at,
-                "detail": "PhD files are available for source reads." if files_state.get("ok") else f"PhD files unavailable: {files_state.get('error', 'unknown')}.",
+                "detail": "PhD files are current." if files_state.get("ok") else f"PhD files unavailable: {files_state.get('error', 'unknown')}.",
             },
             "sources": [
                 {"name": "phd app state", "url": PHD_APP_STATE_URL, "status": "current" if app_state.get("ok") else "unavailable"},
@@ -2004,14 +2004,14 @@ class ImagineerSystem:
         target = state.get("target") if isinstance(state.get("target"), dict) else {}
         role = target.get("north_star_title") or "WDI mechanical R&D"
         source_name = str(step.get("title") or "Use the PhD source read.").rstrip(".")
-        source_body = str(step.get("body") or "Capture in PhD; Imagineer reads the source graph.").rstrip(".")
+        source_body = str(step.get("body") or "Capture in PhD.").rstrip(".")
         primary_source = source_intake.get("primary_source") if isinstance(source_intake.get("primary_source"), dict) else {}
-        source_detail = primary_source.get("detail") or "PhD is the intake; Imagineer reads the source graph."
+        source_detail = primary_source.get("detail") or "PhD notes are current."
 
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "PhD intake first; public career signal next; A3 car path downstream."
+                "FluxCell evidence first; public career signal next; A3 car path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2119,10 +2119,8 @@ class ImagineerSystem:
                 "id": "lock-fluxcell-experiment",
                 "lane": "leadership_network",
                 "title": "Make the FluxCell linkage test.",
-                "body": "Capture notes and files in PhD; Imagineer reads them into career state.",
-                "why": (
-                    "PhD is the intake; Imagineer reads it instead of creating a second typing surface."
-                ),
+                "body": "Capture the note and files in PhD.",
+                "why": "",
                 "time": "7 minutes",
                 "href": PHD_HOME_URL,
                 "link_label": "Open phd",

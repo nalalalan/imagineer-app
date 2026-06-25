@@ -5,8 +5,8 @@ const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io"
 
 const fallbackStep = {
   title: "Make the FluxCell linkage test.",
-  body: "Capture notes and files in PhD; Imagineer reads them into career state.",
-  why: "PhD is the intake; Imagineer reads it instead of creating a second typing surface.",
+  body: "Capture the note and files in PhD.",
+  why: "",
   time: "7 minutes",
   href: "https://phd.aolabs.io/",
   linkLabel: "Open phd",
@@ -119,7 +119,7 @@ function fallbackLifeLoop(step, ops) {
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
     title: "Career source, income path, car",
-    summary: "PhD intake first; public career signal next; A3 car path downstream.",
+    summary: "FluxCell evidence first; public career signal next; A3 car path downstream.",
     items: [
       {
         label: "Career",
@@ -129,7 +129,7 @@ function fallbackLifeLoop(step, ops) {
       {
         label: "Source",
         value: String(step.title || "Current PhD source").replace(/\.$/, ""),
-        detail: `${step.body || "Capture in PhD; Imagineer reads the source graph."} Then update profile, CV, paper, and Progress.`,
+        detail: `${step.body || "Capture in PhD."} Current source freshness is shown below.`,
       },
       {
         label: "Money",
@@ -181,7 +181,7 @@ function renderSourceIntake(ops) {
   const reviewer = ops?.reviewer_state || ops?.reviewer?.review_state;
   const lead = ops?.lead_verification;
 
-  setText("#source-intake-status", intake?.current_step || "Capture in PhD. Imagineer reads PhD, Progress, A3, CV, and lead state.");
+  setText("#source-intake-status", intake?.current_step || "Current PhD evidence, Progress, A3, CV, and lead state.");
 
   const rows = $("#source-state-rows");
   if (rows) {
@@ -189,9 +189,9 @@ function renderSourceIntake(ops) {
     const files = intake?.files || {};
     const items = [
       {
-        label: "Intake",
+        label: "PhD",
         value: phd.status === "current" ? "phd current" : phd.status || "phd unavailable",
-        detail: phd.detail || "Write notes and upload files in PhD; Imagineer reads that source.",
+        detail: phd.detail || "Write notes and upload files in PhD.",
       },
       {
         label: "Notes",
