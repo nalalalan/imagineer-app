@@ -109,7 +109,6 @@ function render(step, ops, progress) {
   }
 
   renderLifeLoop(ops?.life_loop || fallbackLifeLoop(step, ops));
-  renderSourceIntake(ops);
 }
 
 function fallbackLifeLoop(step, ops) {
@@ -173,65 +172,6 @@ function renderLifeItem(item) {
   detail.textContent = clean(item.detail);
 
   row.append(label, value, detail);
-  return row;
-}
-
-function renderSourceIntake(ops) {
-  const intake = ops?.source_intake;
-  const reviewer = ops?.reviewer_state || ops?.reviewer?.review_state;
-  const lead = ops?.lead_verification;
-
-  setText("#source-intake-status", intake?.current_step || "Current PhD evidence, Progress, A3, CV, and lead state.");
-
-  const rows = $("#source-state-rows");
-  if (rows) {
-    const phd = intake?.primary_source || {};
-    const files = intake?.files || {};
-    const items = [
-      {
-        label: "PhD",
-        value: phd.status === "current" ? "phd current" : phd.status || "phd unavailable",
-        detail: phd.detail || "Write notes and upload files in PhD.",
-      },
-      {
-        label: "Notes",
-        value: phd.note_count != null ? `${phd.note_count} notes` : "notes unavailable",
-        detail: phd.latest_note_at ? `Latest PhD note ${formatDateTime(phd.latest_note_at)}.` : "No PhD note timestamp available.",
-      },
-      {
-        label: "Files",
-        value: files.file_count != null ? `${files.file_count} files` : "files unavailable",
-        detail: files.latest_file_at ? `Latest PhD file ${formatDateTime(files.latest_file_at)}.` : "No PhD file timestamp available.",
-      },
-      {
-        label: "Reviewer",
-        value: reviewer?.label || "Review state unavailable",
-        detail: reviewer?.action || "Review after PhD source movement changes the career state.",
-      },
-      {
-        label: "Lead",
-        value: lead?.status ? `${lead.status}${lead.age_days != null ? `, ${lead.age_days}d` : ""}` : "lead check unavailable",
-        detail: lead?.action || "Verify the clicked Disney destination before lead-facing use.",
-      },
-    ];
-    rows.replaceChildren(...items.map(renderSourceRow));
-  }
-}
-
-function renderSourceRow(item) {
-  const row = document.createElement("div");
-
-  const label = document.createElement("dt");
-  label.textContent = clean(item.label);
-
-  const value = document.createElement("dd");
-  const strong = document.createElement("strong");
-  strong.textContent = clean(item.value);
-  const detail = document.createElement("span");
-  detail.textContent = clean(item.detail);
-  value.append(strong, detail);
-
-  row.append(label, value);
   return row;
 }
 
