@@ -25,7 +25,7 @@ DISNEY_JOB_SEARCH_URL = (
 )
 VERIFIED_DISNEY_JOB_URL = (
     "https://www.disneycareers.com/en/job/glendale/"
-    "principal-ride-development-engineer-design-assurance/391/87268384416"
+    "principal-ride-development-engineer/391/87268384416"
 )
 A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
 PHD_HOME_URL = "https://phd.aolabs.io/"
@@ -47,17 +47,17 @@ DEFAULT_STATE: dict[str, Any] = {
     "active_experiment_id": "autonomous-ai-reviewer-v0",
     "target": {
         "north_star_title": "Principal R&D Imagineer - Mechanical Engineer",
-        "active_rung_title": "Principal Ride Development Engineer, Design Assurance",
+        "active_rung_title": "Principal Ride Development Engineer",
         "company": "Walt Disney Imagineering",
         "location": "Glendale, California",
         "active_listing_job_id": "10134485",
-        "active_listing_posted": "2026-06-01",
+        "active_listing_posted": "2026-06-23",
         "active_listing_url": VERIFIED_DISNEY_JOB_URL,
         "active_listing_state": "verified_live_listing",
-        "active_listing_last_checked_at": "2026-06-18T16:00:32+00:00",
+        "active_listing_last_checked_at": "2026-06-25T13:15:30+00:00",
         "active_listing_last_status_code": 200,
-        "active_listing_note": "Disney Careers destination verified live on 2026-06-18 at 12:00 PM ET: Principal Ride Development Engineer, Design Assurance, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
-        "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride-development design assurance, not proof of R&D hiring fit.",
+        "active_listing_note": "Disney Careers destination verified live on 2026-06-25 at 9:15 AM ET: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
+        "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride development, not proof of R&D hiring fit.",
     },
     "positioning": POSITIONING_LINE,
     "profile_record": {
@@ -1943,7 +1943,7 @@ class ImagineerSystem:
 
     def _lead_destination_match(self, text: str, target: dict[str, Any]) -> bool:
         lowered = text.lower()
-        title = str(target.get("active_rung_title") or "Principal Ride Development Engineer, Design Assurance").lower()
+        title = str(target.get("active_rung_title") or "Principal Ride Development Engineer").lower()
         title_parts = [part.strip() for part in re.split(r"[,;-]", title) if part.strip()]
         company = str(target.get("company") or "Walt Disney Imagineering").lower()
         location = str(target.get("location") or "Glendale").lower()
