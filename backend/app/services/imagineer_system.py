@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import binascii
 import copy
 import html
 import json
@@ -30,19 +28,11 @@ VERIFIED_DISNEY_JOB_URL = (
     "principal-ride-development-engineer-design-assurance/391/87268384416"
 )
 A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
+PHD_HOME_URL = "https://phd.aolabs.io/"
+PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
+PHD_FILES_URL = "https://phd.aolabs.io/api/files"
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
-MAX_PROOF_UPLOAD_BYTES = 12 * 1024 * 1024
-PROOF_SYNC_TARGETS = ["profile", "CV", "paper", "Progress"]
-PROOF_TAGS = ["proof", "fluxcell", "mechanical_depth", "leadership_network", "paper_system", "reviewer_ready"]
-PROOF_MIME_EXTENSIONS = {
-    "image/png": ".png",
-    "image/jpeg": ".jpg",
-    "image/webp": ".webp",
-    "video/mp4": ".mp4",
-    "video/quicktime": ".mov",
-    "application/pdf": ".pdf",
-    "text/plain": ".txt",
-}
+SOURCE_SYNC_TARGETS = ["PhD", "Progress", "A3", "CV", "paper"]
 
 
 def _utc_now() -> str:
@@ -284,7 +274,6 @@ class ImagineerSystem:
             configured = os.getenv("IMAGINEER_STATE_PATH", "").strip()
             state_path = configured or Path.cwd() / ".runtime" / "imagineer_state.json"
         self.state_path = Path(state_path)
-        self.proof_upload_dir = self.state_path.parent / "proof_uploads"
         self._state_lock = threading.RLock()
 
     def ops_check(self) -> dict[str, Any]:
@@ -295,7 +284,7 @@ class ImagineerSystem:
         next_action = self._next_action(state, weakest)
         personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
-        proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
+        source_events = [event for event in state["events"] if event.get("kind") in {"source", "proof"}]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
         reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
@@ -304,6 +293,7 @@ class ImagineerSystem:
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
         generated_at = _utc_now()
         a3_snapshot = self._a3_queue_snapshot()
+        source_intake = self._source_intake_state(state)
         life_loop = self._life_loop(
             state=state,
             dimensions=dimensions,
@@ -311,6 +301,7 @@ class ImagineerSystem:
             step=personal_step,
             fit_score=fit_score,
             a3_snapshot=a3_snapshot,
+            source_intake=source_intake,
         )
         reviewer = self._reviewer_report_from_state(state, compact=True)
         lead_verification = self._lead_verification_state(state)
@@ -326,7 +317,7 @@ class ImagineerSystem:
             "next_action": next_action,
             "personal_step": personal_step,
             "life_loop": life_loop,
-            "proof_capture": self._proof_capture_state(state),
+            "source_intake": source_intake,
             "lead_verification": lead_verification,
             "decision_system": step_decision["system"],
             "reviewer": reviewer,
@@ -334,7 +325,8 @@ class ImagineerSystem:
             "active_experiment": self._experiment_view(active_experiment, state),
             "dimensions": dimensions,
             "evidence": {
-                "proof_events": len(proof_events),
+                "source_events": len(source_events),
+                "work_logs": len(source_events),
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
                 "ai_reviews": len(ai_reviews),
@@ -355,11 +347,10 @@ class ImagineerSystem:
             },
             "system_health": {
                 "state_path": str(self.state_path),
-                "proof_upload_dir": str(self.proof_upload_dir),
                 "openai_planner": bool(os.getenv("OPENAI_API_KEY")),
                 "openai_model": self._openai_model() if os.getenv("OPENAI_API_KEY") else None,
                 "storage": "json_runtime_state",
-                "write_surface": "events_proofs_lead_checks_and_ai_reviews",
+                "write_surface": "events_source_reads_lead_checks_and_ai_reviews",
             },
         }
 
@@ -520,52 +511,6 @@ class ImagineerSystem:
             self._save_state(state)
             return {"ok": True, "event": event, "ops": self.ops_check()}
 
-    def record_proof_capture(self, payload: dict[str, Any]) -> dict[str, Any]:
-        with self._state_lock:
-            state = self._load_state()
-            artifact = self._save_proof_artifact(payload)
-            proof_fields = self._proof_fields(payload)
-            event_payload = {
-                "kind": "proof",
-                "title": "FluxCell proof captured",
-                "notes": self._proof_notes(proof_fields, artifact),
-                "link": artifact.get("route") if artifact else str(payload.get("link") or "").strip(),
-                "tags": PROOF_TAGS,
-                "impact": 4,
-            }
-            event = self._event_from_payload(event_payload)
-            event["proof_capture"] = {
-                "fields": proof_fields,
-                "sync_targets": PROOF_SYNC_TARGETS,
-                "sync_state": "runtime_profile_journal_updated",
-            }
-            if artifact:
-                event["artifact"] = artifact
-            state["events"].insert(0, event)
-            state["events"] = state["events"][:300]
-            self._append_journal_from_event(state, event)
-            self._touch_profile_record(state, event["created_at"])
-            self._save_state(state)
-            return {
-                "ok": True,
-                "proof": event,
-                "sync": self._proof_sync_plan(event),
-                "ops": self.ops_check(),
-            }
-
-    def proof_artifact_path(self, filename: str) -> Path | None:
-        clean = self._safe_filename(filename)
-        if not clean or clean != filename:
-            return None
-        path = (self.proof_upload_dir / clean).resolve()
-        try:
-            path.relative_to(self.proof_upload_dir.resolve())
-        except ValueError:
-            return None
-        if not path.exists() or not path.is_file():
-            return None
-        return path
-
     def run_lead_check(self) -> dict[str, Any]:
         with self._state_lock:
             state = self._load_state()
@@ -676,7 +621,7 @@ class ImagineerSystem:
             {
                 "heading": "Current Results",
                 "body": (
-                    f"This week has {len(recent_events)} logged events, {ops['evidence']['proof_events']} total work logs, "
+                    f"This week has {len(recent_events)} logged events, {ops['evidence']['work_logs']} total work logs, "
                     f"{ops['evidence']['daily_cycles']} daily cycles, {ops['evidence']['reviewer_ready_artifacts']} public artifacts, "
                     f"and {ops['evidence']['portfolio_items']} portfolio anchors. "
                     f"{headline}."
@@ -727,7 +672,7 @@ class ImagineerSystem:
         next_action = self._next_action(state, weakest)
         personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
-        proof_events = [event for event in state["events"] if event.get("kind") == "proof"]
+        source_events = [event for event in state["events"] if event.get("kind") in {"source", "proof"}]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
         cycle_events = [event for event in state["events"] if event.get("kind") == "daily_cycle"]
         reviewer_ready_events = [event for event in state["events"] if "reviewer_ready" in event.get("tags", [])]
@@ -747,7 +692,8 @@ class ImagineerSystem:
             "dimensions": dimensions,
             "profile": self._profile_view(state),
             "evidence": {
-                "proof_events": len(proof_events),
+                "source_events": len(source_events),
+                "work_logs": len(source_events),
                 "outreach_events": len(outreach_events),
                 "daily_cycles": len(cycle_events),
                 "ai_reviews": len(ai_reviews),
@@ -884,7 +830,7 @@ class ImagineerSystem:
             return {
                 "status": "not_run",
                 "label": "Review not run",
-                "action": "Run review after proof capture.",
+                "action": "Run review after PhD source movement changes the career state.",
                 "last_review_at": None,
                 "age_days": None,
             }
@@ -897,15 +843,15 @@ class ImagineerSystem:
         if stale and fallback_state:
             status = "stale_fallback"
             label = "Review stale; fallback used"
-            action = "Capture current FluxCell proof before another review."
+            action = "Read current PhD source movement before another review."
         elif stale:
             status = "stale"
             label = "Review stale"
-            action = "Run review after the current proof changes."
+            action = "Run review after the PhD source state changes."
         elif fallback_state:
             status = "fallback"
             label = "Fallback review"
-            action = "Retry review after proof capture."
+            action = "Retry review after PhD source movement."
         else:
             status = "review_ready"
             label = "Review current"
@@ -1570,7 +1516,7 @@ class ImagineerSystem:
     def _event_from_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         raw_tags = payload.get("tags") or []
         tags = [str(tag).strip() for tag in raw_tags if str(tag).strip()]
-        kind = str(payload.get("kind") or "proof").strip().lower()[:40]
+        kind = str(payload.get("kind") or "source").strip().lower()[:40]
         return {
             "id": str(uuid.uuid4()),
             "created_at": _utc_now(),
@@ -1737,19 +1683,20 @@ class ImagineerSystem:
 
     def _experiment_view(self, experiment: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
         start = experiment.get("started_at")
-        proof_count = sum(1 for event in state["events"] if event.get("kind") == "proof")
+        source_log_count = sum(1 for event in state["events"] if event.get("kind") in {"source", "proof"})
         cycle_count = sum(1 for event in state["events"] if event.get("kind") == "daily_cycle")
         reviewer_ready = sum(1 for event in state["events"] if "reviewer_ready" in event.get("tags", []))
         reviewer_ready += sum(1 for item in state["portfolio"] if "reviewer_ready" in item.get("tags", []))
         warm_review = sum(1 for event in state["events"] if "warm_review" in event.get("tags", []))
         ai_reviews = len(state.get("reviews", []))
         progress = {
-            "proof_logs": proof_count,
+            "source_logs": source_log_count,
+            "work_logs": source_log_count,
             "daily_cycles": cycle_count,
             "reviewer_ready_artifacts": reviewer_ready,
             "ai_reviews": ai_reviews,
             "warm_review_requests": warm_review,
-            "target_proof_logs": 5,
+            "target_source_logs": 5,
             "target_reviewer_ready_artifacts": 1,
             "target_ai_reviews": 1,
             "target_warm_review_requests": 1,
@@ -1779,134 +1726,112 @@ class ImagineerSystem:
             }
         return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
 
-    def _proof_capture_state(self, state: dict[str, Any]) -> dict[str, Any]:
-        proofs = [
-            event
-            for event in state.get("events", [])
-            if event.get("kind") == "proof" and ("fluxcell" in event.get("tags", []) or "FluxCell" in str(event.get("title", "")))
-        ]
-        latest = proofs[0] if proofs else None
+    def _source_intake_state(self, state: dict[str, Any]) -> dict[str, Any]:
+        app_state = self._fetch_json_source(PHD_APP_STATE_URL, read_limit=2_000_000)
+        files_state = self._fetch_json_source(PHD_FILES_URL, read_limit=2_000_000)
+
+        notes = []
+        if app_state.get("ok"):
+            raw_state = app_state.get("json", {}).get("state")
+            if isinstance(raw_state, dict) and isinstance(raw_state.get("notes"), list):
+                notes = [note for note in raw_state["notes"] if isinstance(note, dict)]
+
+        files = []
+        if files_state.get("ok") and isinstance(files_state.get("json", {}).get("files"), list):
+            files = [item for item in files_state["json"]["files"] if isinstance(item, dict)]
+
+        latest_note_at = self._latest_record_time(notes, ("updatedAt", "createdAt", "capturedAt"))
+        latest_file_at = self._latest_record_time(files, ("sourceCreatedAt", "createdAt", "capturedAt"))
+        topics = self._phd_topic_flags(notes)
+        status = "current" if app_state.get("ok") or files_state.get("ok") else "unavailable"
+        note_detail = (
+            "PhD notes are the career-source intake."
+            if app_state.get("ok")
+            else f"PhD notes unavailable: {app_state.get('error', 'unknown')}."
+        )
+        if topics:
+            note_detail = f"Active source flags: {', '.join(topics)}."
+
         return {
-            "title": "FluxCell proof capture",
-            "status": "proof_logged" if latest else "ready_for_capture",
-            "endpoint": "/api/imagineer/proofs",
-            "current_step": "Add one note, measurement, route, photo, video, PDF, or text file from the FluxCell linkage test.",
-            "artifact_types": ["note", "measurement", "route", "photo", "video", "PDF", "text file"],
-            "sync_targets": PROOF_SYNC_TARGETS,
-            "latest": self._compact_proof(latest),
+            "title": "PhD source intake",
+            "status": status,
+            "current_step": "Capture notes and files in PhD; Imagineer reads that source graph into career state.",
+            "sync_targets": SOURCE_SYNC_TARGETS,
+            "primary_source": {
+                "name": "phd",
+                "url": PHD_HOME_URL,
+                "status": "current" if app_state.get("ok") else "unavailable",
+                "note_count": len(notes) if app_state.get("ok") else None,
+                "latest_note_at": latest_note_at,
+                "detail": note_detail,
+                "topics": topics,
+            },
+            "files": {
+                "url": PHD_FILES_URL,
+                "status": "current" if files_state.get("ok") else "unavailable",
+                "file_count": len(files) if files_state.get("ok") else None,
+                "latest_file_at": latest_file_at,
+                "detail": "PhD files are available for source reads." if files_state.get("ok") else f"PhD files unavailable: {files_state.get('error', 'unknown')}.",
+            },
+            "sources": [
+                {"name": "phd app state", "url": PHD_APP_STATE_URL, "status": "current" if app_state.get("ok") else "unavailable"},
+                {"name": "phd files", "url": PHD_FILES_URL, "status": "current" if files_state.get("ok") else "unavailable"},
+                {"name": "Progress", "url": "https://progress.aolabs.io/api/progress/summary", "status": "current"},
+                {"name": "A3", "url": A3_QUEUE_SNAPSHOT_URL, "status": "checked"},
+                {"name": "CV", "url": "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf", "status": "source"},
+            ],
+            "privacy": "Public Imagineer shows source counts, freshness, and topic flags, not raw PhD note text.",
         }
 
-    def _compact_proof(self, event: dict[str, Any] | None) -> dict[str, Any] | None:
-        if not event:
-            return None
-        artifact = event.get("artifact") if isinstance(event.get("artifact"), dict) else {}
-        fields = {}
-        capture = event.get("proof_capture") if isinstance(event.get("proof_capture"), dict) else {}
-        if isinstance(capture.get("fields"), dict):
-            fields = capture["fields"]
-        return {
-            "id": event.get("id"),
-            "created_at": event.get("created_at"),
-            "title": event.get("title"),
-            "notes": event.get("notes"),
-            "link": event.get("link"),
-            "artifact_route": artifact.get("route"),
-            "artifact_type": artifact.get("type"),
-            "measurement": fields.get("measurement"),
-            "changed": fields.get("changed"),
-        }
-
-    def _proof_fields(self, payload: dict[str, Any]) -> dict[str, str]:
-        fields = {
-            "note": str(payload.get("note") or "").strip(),
-            "measurement": str(payload.get("measurement") or "").strip(),
-            "changed": str(payload.get("changed") or "").strip(),
-            "failure": str(payload.get("failure") or "").strip(),
-            "next_update": str(payload.get("next_update") or "").strip(),
-            "link": str(payload.get("link") or "").strip(),
-        }
-        return {key: value for key, value in fields.items() if value}
-
-    def _proof_notes(self, fields: dict[str, str], artifact: dict[str, Any] | None) -> str:
-        parts = []
-        if fields.get("changed"):
-            parts.append(f"Changed: {fields['changed']}.")
-        if fields.get("measurement"):
-            parts.append(f"Measurement/result: {fields['measurement']}.")
-        if fields.get("note"):
-            parts.append(f"Note: {fields['note']}")
-        if fields.get("failure"):
-            parts.append(f"Failure/limit: {fields['failure']}.")
-        if fields.get("next_update"):
-            parts.append(f"Next update: {fields['next_update']}.")
-        if fields.get("link"):
-            parts.append(f"Source route: {fields['link']}.")
-        if artifact:
-            parts.append(f"Artifact: {artifact.get('name')} ({artifact.get('type')}).")
-        if not parts:
-            raise ValueError("Add a note, measurement, link, or file before logging proof.")
-        parts.append("Runtime profile and journal state updated; next public sync targets: profile, CV, paper, Progress.")
-        return " ".join(parts)[:4000]
-
-    def _proof_sync_plan(self, event: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "state": "runtime_profile_journal_updated",
-            "event_id": event.get("id"),
-            "targets": PROOF_SYNC_TARGETS,
-            "remaining": ["static CV PDF", "static paper PDF", "Progress public event"],
-        }
-
-    def _save_proof_artifact(self, payload: dict[str, Any]) -> dict[str, Any] | None:
-        data_url = str(payload.get("artifact_data") or "").strip()
-        if not data_url:
-            return None
-        if ";base64," not in data_url:
-            raise ValueError("Proof artifact must be a base64 data URL.")
-        header, encoded = data_url.split(";base64,", 1)
-        mime = str(payload.get("artifact_mime") or header.replace("data:", "") or "application/octet-stream").strip().lower()
-        if mime not in PROOF_MIME_EXTENSIONS:
-            raise ValueError("Unsupported proof artifact type.")
+    def _fetch_json_source(self, url: str, *, read_limit: int = 250_000, timeout: int = 6) -> dict[str, Any]:
         try:
-            content = base64.b64decode(encoded, validate=True)
-        except (binascii.Error, ValueError) as exc:
-            raise ValueError("Proof artifact could not be decoded.") from exc
-        if not content:
-            raise ValueError("Proof artifact is empty.")
-        if len(content) > MAX_PROOF_UPLOAD_BYTES:
-            raise ValueError("Proof artifact is over the 12 MB limit.")
+            request = Request(
+                url,
+                headers={
+                    "User-Agent": "AO-Labs-Imagineer-Source-Read/1.0",
+                    "Accept": "application/json,text/plain;q=0.8,*/*;q=0.3",
+                },
+            )
+            with urlopen(request, timeout=timeout) as response:
+                status_code = getattr(response, "status", 200)
+                raw = response.read(read_limit).decode("utf-8", errors="ignore")
+            data = json.loads(raw)
+            if isinstance(data, dict):
+                return {"ok": True, "url": url, "status_code": status_code, "json": data}
+            return {"ok": False, "url": url, "error": "invalid_payload"}
+        except (HTTPError, URLError, OSError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+            return {"ok": False, "url": url, "error": f"{type(exc).__name__}"}
 
-        original_name = self._safe_filename(str(payload.get("artifact_name") or "proof-artifact"))
-        suffix = PROOF_MIME_EXTENSIONS[mime]
-        stem = original_name.rsplit(".", 1)[0] if "." in original_name else original_name
-        stem = stem or "proof-artifact"
-        filename = self._safe_filename(f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}-{stem}{suffix}")
-        self.proof_upload_dir.mkdir(parents=True, exist_ok=True)
-        path = self.proof_upload_dir / filename
-        path.write_bytes(content)
-        artifact_type = str(payload.get("artifact_type") or "").strip() or self._artifact_type_from_mime(mime)
-        route = f"/api/imagineer/proofs/{filename}"
-        return {
-            "name": original_name,
-            "filename": filename,
-            "route": route,
-            "type": artifact_type,
-            "mime": mime,
-            "bytes": len(content),
-        }
+    def _latest_record_time(self, records: list[dict[str, Any]], keys: tuple[str, ...]) -> str | None:
+        latest: datetime | None = None
+        latest_raw: str | None = None
+        for record in records:
+            for key in keys:
+                value = record.get(key)
+                if isinstance(value, dict):
+                    value = value.get("capturedAt") or value.get("createdAt")
+                parsed = self._parse_timestamp(value)
+                if parsed and (latest is None or parsed > latest):
+                    latest = parsed
+                    latest_raw = str(value)
+                if parsed:
+                    break
+        return latest_raw
 
-    def _safe_filename(self, value: str) -> str:
-        name = Path(str(value or "")).name
-        name = re.sub(r"[^A-Za-z0-9._-]+", "-", name).strip(".-_")
-        return name[:140]
-
-    def _artifact_type_from_mime(self, mime: str) -> str:
-        if mime.startswith("image/"):
-            return "photo"
-        if mime.startswith("video/"):
-            return "video"
-        if mime == "application/pdf":
-            return "PDF"
-        return "text file"
+    def _phd_topic_flags(self, notes: list[dict[str, Any]]) -> list[str]:
+        recent_text = "\n".join(str(note.get("text") or "") for note in notes[:12]).lower()
+        topic_defs = [
+            ("paper comments", ("paper", "comment", "overleaf", "advisor")),
+            ("cell geometry", ("cell geometry", "linkage", "collinear", "opposite", "overhang")),
+            ("EPM valve", ("epm", "electropermanent", "valve", "magnet")),
+            ("pneumatic-mechanical connector", ("pneumatic-mechanical", "connector", "manifold", "inlet")),
+            ("bench record", ("bench", "prototype", "video", "width", "pulse")),
+        ]
+        topics = []
+        for label, keywords in topic_defs:
+            if any(keyword in recent_text for keyword in keywords):
+                topics.append(label)
+        return topics[:4]
 
     def _lead_verification_state(self, state: dict[str, Any]) -> dict[str, Any]:
         target = state.get("target") if isinstance(state.get("target"), dict) else {}
@@ -1931,10 +1856,10 @@ class ImagineerSystem:
                 action = "Clicked Disney destination verified."
             elif latest_state == "verification_mismatch":
                 status = "mismatch"
-                action = "Fresh destination check did not match title/company/location; do not use as a lead yet."
+                action = "Fresh destination check did not match title/company/location; lead is not current."
             elif latest_state == "verification_unavailable":
                 status = "unverified"
-                action = "Fresh destination check did not complete; do not use as a lead yet."
+                action = "Fresh destination check did not complete; lead is not current."
             elif latest_state == "unavailable_on_last_check":
                 status = "unavailable"
                 action = "Fresh destination check found the lead unavailable."
@@ -2036,6 +1961,7 @@ class ImagineerSystem:
         step: dict[str, Any],
         fit_score: int,
         a3_snapshot: dict[str, Any],
+        source_intake: dict[str, Any],
     ) -> dict[str, Any]:
         car = a3_snapshot.get("car") if isinstance(a3_snapshot.get("car"), dict) else {}
         car_path = a3_snapshot.get("carPath") if isinstance(a3_snapshot.get("carPath"), dict) else {}
@@ -2059,21 +1985,23 @@ class ImagineerSystem:
         if readiness.get("label") and readiness.get("reason"):
             finance_line = f"{readiness['label']}: {readiness['reason']}. {finance_line}".strip()
         if not finance_line:
-            finance_line = "A3 queue snapshot unavailable; keep the career proof as the main controllable lever."
+            finance_line = "A3 queue snapshot unavailable; keep PhD-sourced career evidence as the main controllable lever."
 
         bottleneck_label = weakest.get("label") or "Current bottleneck"
         bottleneck_score = int(weakest.get("score") or 0)
         target = state.get("target") if isinstance(state.get("target"), dict) else {}
         role = target.get("north_star_title") or "WDI mechanical R&D"
-        artifact_name = str(step.get("title") or "Make one proof artifact.").rstrip(".")
-        artifact_body = str(step.get("body") or "Create source-backed public proof.").rstrip(".")
+        source_name = str(step.get("title") or "Use the PhD source read.").rstrip(".")
+        source_body = str(step.get("body") or "Capture in PhD; Imagineer reads the source graph.").rstrip(".")
+        primary_source = source_intake.get("primary_source") if isinstance(source_intake.get("primary_source"), dict) else {}
+        source_detail = primary_source.get("detail") or "PhD is the intake; Imagineer reads the source graph."
 
         return {
-            "title": "Career proof, income path, car",
+            "title": "Career source, income path, car",
             "summary": (
-                "Current proof artifact first; public career signal next; A3 car path downstream."
+                "PhD intake first; public career signal next; A3 car path downstream."
             ),
-            "source": "Imagineer ops + Progress source graph + PhD queue + A3 queue snapshot.",
+            "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
             "primary_action_id": step.get("decision_id"),
             "items": [
@@ -2083,14 +2011,14 @@ class ImagineerSystem:
                     "detail": f"{bottleneck_label} {bottleneck_score}/100 is the current live gap.",
                 },
                 {
-                    "label": "Proof",
-                    "value": artifact_name,
-                    "detail": f"{artifact_body}; then update the public profile, CV, paper, and Progress record.",
+                    "label": "Source",
+                    "value": source_name,
+                    "detail": f"{source_body}; {source_detail}",
                 },
                 {
                     "label": "Money",
                     "value": "Higher-income R&D path",
-                    "detail": "The controllable lever is stronger inspectable ownership proof, not another profile rewrite.",
+                    "detail": "The controllable lever is stronger inspectable ownership from PhD-sourced work, not another profile rewrite.",
                 },
                 {
                     "label": "Car",
@@ -2173,19 +2101,19 @@ class ImagineerSystem:
         dimensions: list[dict[str, Any]],
         weakest: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        phd_doc = "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit"
+        phd_doc = PHD_HOME_URL
         candidates = [
             {
                 "id": "lock-fluxcell-experiment",
                 "lane": "leadership_network",
                 "title": "Make the FluxCell linkage test.",
-                "body": "Actuator-less array, clip-programmed shape, overhang motion check.",
+                "body": "Capture notes and files in PhD; Imagineer reads them into career state.",
                 "why": (
-                    "The current source names the prototype path; visible ownership now needs a measured first build."
+                    "PhD is the intake; Imagineer reads it instead of creating a second typing surface."
                 ),
                 "time": "7 minutes",
-                "href": "#proof-capture",
-                "link_label": "Start proof",
+                "href": PHD_HOME_URL,
+                "link_label": "Open phd",
                 "source_doc": phd_doc,
                 "urgency": "current ownership is the live failure point",
                 "role_alignment": 24,
@@ -2418,7 +2346,8 @@ class ImagineerSystem:
 
     def _title_for_kind(self, kind: str) -> str:
         titles = {
-            "proof": "Work logged",
+            "proof": "Legacy work logged",
+            "source": "Source state logged",
             "outreach": "Relationship signal logged",
             "portfolio": "Portfolio artifact logged",
             "paper": "Methods signal logged",

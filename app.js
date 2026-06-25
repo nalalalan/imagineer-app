@@ -1,17 +1,15 @@
 const railwayApiBase = "https://imagineer-app-production.up.railway.app";
 const sameOriginApiHosts = new Set(["localhost", "127.0.0.1", "imagineer-app-production.up.railway.app"]);
 const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.location.hostname) ? "" : railwayApiBase);
-const progressApiBase = window.PROGRESS_API_BASE || (
-  ["localhost", "127.0.0.1"].includes(window.location.hostname) ? "http://127.0.0.1:8781" : "https://progress.aolabs.io"
-);
+const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
   title: "Make the FluxCell linkage test.",
-  body: "Actuator-less array, clip-programmed shape, overhang motion check.",
-  why: "The current source names the prototype path; visible ownership now needs a measured first build.",
+  body: "Capture notes and files in PhD; Imagineer reads them into career state.",
+  why: "PhD is the intake; Imagineer reads it instead of creating a second typing surface.",
   time: "7 minutes",
-  href: "#proof-capture",
-  linkLabel: "Start proof",
+  href: "https://phd.aolabs.io/",
+  linkLabel: "Open phd",
   source: "Fallback step. Progress state did not load.",
   updatedAt: new Date().toISOString(),
 };
@@ -111,7 +109,7 @@ function render(step, ops, progress) {
   }
 
   renderLifeLoop(ops?.life_loop || fallbackLifeLoop(step, ops));
-  renderProofCapture(ops, step);
+  renderSourceIntake(ops);
 }
 
 function fallbackLifeLoop(step, ops) {
@@ -120,8 +118,8 @@ function fallbackLifeLoop(step, ops) {
   const target = ops.target?.north_star_title || "WDI mechanical R&D";
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
-    title: "Career proof, income path, car",
-    summary: "Current proof artifact first; public career signal next; A3 car path downstream.",
+    title: "Career source, income path, car",
+    summary: "PhD intake first; public career signal next; A3 car path downstream.",
     items: [
       {
         label: "Career",
@@ -129,14 +127,14 @@ function fallbackLifeLoop(step, ops) {
         detail: bottleneck ? `${bottleneck.label} ${bottleneck.score}/100 is the current live gap.` : "Current bottleneck unavailable.",
       },
       {
-        label: "Proof",
-        value: String(step.title || "Current proof artifact").replace(/\.$/, ""),
-        detail: `${step.body || "Create source-backed public proof."} Then update profile, CV, paper, and Progress.`,
+        label: "Source",
+        value: String(step.title || "Current PhD source").replace(/\.$/, ""),
+        detail: `${step.body || "Capture in PhD; Imagineer reads the source graph."} Then update profile, CV, paper, and Progress.`,
       },
       {
         label: "Money",
         value: "Higher-income R&D path",
-        detail: "Stronger inspectable ownership proof is the controllable lever.",
+        detail: "Stronger inspectable ownership from PhD-sourced work is the controllable lever.",
       },
       {
         label: "Car",
@@ -155,7 +153,7 @@ function renderLifeLoop(loop) {
     return;
   }
 
-  setText("#life-loop-title", loop.title || "Career proof, income path, car");
+  setText("#life-loop-title", loop.title || "Career source, income path, car");
   setText("#life-loop-summary", loop.summary || "");
   grid.replaceChildren(...loop.items.slice(0, 4).map(renderLifeItem));
   setVisible("#life-loop", true);
@@ -178,34 +176,37 @@ function renderLifeItem(item) {
   return row;
 }
 
-function renderProofCapture(ops, step) {
-  const capture = ops?.proof_capture;
+function renderSourceIntake(ops) {
+  const intake = ops?.source_intake;
   const reviewer = ops?.reviewer_state || ops?.reviewer?.review_state;
   const lead = ops?.lead_verification;
 
-  setText("#proof-capture-status", capture?.current_step || "Add one measured FluxCell proof and let the app remember it.");
-  setText("#proof-sync-targets", capture?.sync_targets?.join(", ") || "profile, CV, paper, Progress");
+  setText("#source-intake-status", intake?.current_step || "Capture in PhD. Imagineer reads PhD, Progress, A3, CV, and lead state.");
 
-  const sourceDoc = $("#proof-source-doc");
-  if (sourceDoc) {
-    const sourceDocHref = ops?.decision_system?.candidates?.find((item) => item.id === step.decision_id)?.source_doc
-      || "https://docs.google.com/document/d/1Ffi51WavVvaFBUQX37AbFQ4ZKGEkRlGl-NRcOVQP03c/edit";
-    sourceDoc.href = sourceDocHref;
-  }
-
-  const rows = $("#proof-state-rows");
+  const rows = $("#source-state-rows");
   if (rows) {
-    const latest = capture?.latest;
+    const phd = intake?.primary_source || {};
+    const files = intake?.files || {};
     const items = [
       {
-        label: "Latest proof",
-        value: latest ? formatDateTime(latest.created_at) : "none logged",
-        detail: latest?.measurement || latest?.changed || latest?.notes || "FluxCell proof capture is ready.",
+        label: "Intake",
+        value: phd.status === "current" ? "phd current" : phd.status || "phd unavailable",
+        detail: phd.detail || "Write notes and upload files in PhD; Imagineer reads that source.",
+      },
+      {
+        label: "Notes",
+        value: phd.note_count != null ? `${phd.note_count} notes` : "notes unavailable",
+        detail: phd.latest_note_at ? `Latest PhD note ${formatDateTime(phd.latest_note_at)}.` : "No PhD note timestamp available.",
+      },
+      {
+        label: "Files",
+        value: files.file_count != null ? `${files.file_count} files` : "files unavailable",
+        detail: files.latest_file_at ? `Latest PhD file ${formatDateTime(files.latest_file_at)}.` : "No PhD file timestamp available.",
       },
       {
         label: "Reviewer",
         value: reviewer?.label || "Review state unavailable",
-        detail: reviewer?.action || "Capture proof before the next review.",
+        detail: reviewer?.action || "Review after PhD source movement changes the career state.",
       },
       {
         label: "Lead",
@@ -213,11 +214,11 @@ function renderProofCapture(ops, step) {
         detail: lead?.action || "Verify the clicked Disney destination before lead-facing use.",
       },
     ];
-    rows.replaceChildren(...items.map(renderProofRow));
+    rows.replaceChildren(...items.map(renderSourceRow));
   }
 }
 
-function renderProofRow(item) {
+function renderSourceRow(item) {
   const row = document.createElement("div");
 
   const label = document.createElement("dt");
@@ -234,48 +235,8 @@ function renderProofRow(item) {
   return row;
 }
 
-async function handleProofSubmit(event) {
-  event.preventDefault();
-  const status = $("#proof-form-status");
-  const submit = $("#proof-submit");
-  const file = $("#proof-file")?.files?.[0] || null;
-  const body = {
-    note: $("#proof-note")?.value || "",
-    measurement: $("#proof-measurement")?.value || "",
-    changed: $("#proof-changed")?.value || "",
-    failure: $("#proof-failure")?.value || "",
-    next_update: $("#proof-next")?.value || "",
-    link: $("#proof-link")?.value || "",
-  };
-  const hasText = Object.values(body).some((value) => String(value || "").trim());
-  if (!hasText && !file) {
-    if (status) status.textContent = "Add a note, measurement, link, or file.";
-    return;
-  }
-
-  if (submit) submit.disabled = true;
-  if (status) status.textContent = "Logging proof.";
-  try {
-    const filePayload = file ? await fileToPayload(file) : {};
-    const result = await request(`${apiBase}/api/imagineer/proofs`, {
-      method: "POST",
-      timeout: 30000,
-      body: { ...body, ...filePayload },
-    });
-    if (result?.ops) {
-      render(bestStep(result.ops, null), result.ops, null);
-    }
-    $("#proof-form")?.reset();
-    if (status) status.textContent = "Proof logged. Runtime profile and journal state updated.";
-  } catch (error) {
-    if (status) status.textContent = "Proof did not log. Check file size or route.";
-  } finally {
-    if (submit) submit.disabled = false;
-  }
-}
-
 async function handleLeadCheck() {
-  const status = $("#proof-form-status");
+  const status = $("#source-status");
   const button = $("#lead-check");
   if (button) button.disabled = true;
   if (status) status.textContent = "Checking Disney destination.";
@@ -294,33 +255,6 @@ async function handleLeadCheck() {
   } finally {
     if (button) button.disabled = false;
   }
-}
-
-async function fileToPayload(file) {
-  if (file.size > 12 * 1024 * 1024) {
-    throw new Error("file_too_large");
-  }
-  return {
-    artifact_name: file.name,
-    artifact_type: file.type.startsWith("image/")
-      ? "photo"
-      : file.type.startsWith("video/")
-        ? "video"
-        : file.type === "application/pdf"
-          ? "PDF"
-          : "text file",
-    artifact_mime: file.type || "text/plain",
-    artifact_data: await readAsDataUrl(file),
-  };
-}
-
-function readAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error || new Error("read_failed"));
-    reader.readAsDataURL(file);
-  });
 }
 
 function clean(value) {
@@ -352,6 +286,5 @@ function formatDateTime(value) {
 }
 
 $("#refresh")?.addEventListener("click", loadState);
-$("#proof-form")?.addEventListener("submit", handleProofSubmit);
 $("#lead-check")?.addEventListener("click", handleLeadCheck);
 loadState().catch(() => render(fallbackStep, null, null));
