@@ -1443,6 +1443,7 @@ class ImagineerSystem:
                 "active_rung_title",
                 "company",
                 "location",
+                "north_star_note",
             ):
                 target[key] = copy.deepcopy(default_target[key])
 
@@ -2086,7 +2087,7 @@ class ImagineerSystem:
                 "selected_score": selected["score"],
                 "current_bottleneck": weakest["key"],
                 "inputs": [
-                    "verified WDI ride-development design-assurance lead",
+                    "verified WDI ride-development lead",
                     "principal-scope north star",
                     "role-fit dimension scores",
                     "AO Labs public-source graph",
