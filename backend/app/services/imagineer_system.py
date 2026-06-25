@@ -27,6 +27,7 @@ VERIFIED_DISNEY_JOB_URL = (
     "https://www.disneycareers.com/en/job/glendale/"
     "principal-ride-development-engineer-design-assurance/391/87268384416"
 )
+A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 
 
@@ -286,6 +287,15 @@ class ImagineerSystem:
         ai_reviews = state.get("reviews", [])
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
         generated_at = _utc_now()
+        a3_snapshot = self._a3_queue_snapshot()
+        life_loop = self._life_loop(
+            state=state,
+            dimensions=dimensions,
+            weakest=weakest,
+            step=personal_step,
+            fit_score=fit_score,
+            a3_snapshot=a3_snapshot,
+        )
 
         return {
             "status": "building_position_machine_v1",
@@ -297,6 +307,7 @@ class ImagineerSystem:
             "current_bottleneck": weakest,
             "next_action": next_action,
             "personal_step": personal_step,
+            "life_loop": life_loop,
             "decision_system": step_decision["system"],
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
@@ -1598,6 +1609,123 @@ class ImagineerSystem:
             "target_warm_review_requests": 1,
         }
         return {**experiment, "started_at": start, "progress": progress}
+
+    def _a3_queue_snapshot(self) -> dict[str, Any]:
+        try:
+            request = Request(
+                A3_QUEUE_SNAPSHOT_URL,
+                headers={
+                    "User-Agent": "AO-Labs-Imagineer-Life-Loop/1.0",
+                    "Accept": "application/json,text/plain;q=0.8,*/*;q=0.3",
+                },
+            )
+            with urlopen(request, timeout=5) as response:
+                raw = response.read(80_000).decode("utf-8", errors="ignore")
+            data = json.loads(raw)
+            if isinstance(data, dict):
+                return data
+        except (HTTPError, URLError, OSError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+            return {
+                "ok": False,
+                "available": False,
+                "source": A3_QUEUE_SNAPSHOT_URL,
+                "error": f"{type(exc).__name__}",
+            }
+        return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
+
+    def _life_loop(
+        self,
+        *,
+        state: dict[str, Any],
+        dimensions: list[dict[str, Any]],
+        weakest: dict[str, Any],
+        step: dict[str, Any],
+        fit_score: int,
+        a3_snapshot: dict[str, Any],
+    ) -> dict[str, Any]:
+        car = a3_snapshot.get("car") if isinstance(a3_snapshot.get("car"), dict) else {}
+        car_path = a3_snapshot.get("carPath") if isinstance(a3_snapshot.get("carPath"), dict) else {}
+        finance = a3_snapshot.get("financeRead") if isinstance(a3_snapshot.get("financeRead"), dict) else {}
+        readiness = car_path.get("readiness") if isinstance(car_path.get("readiness"), dict) else {}
+
+        car_name = str(car.get("name") or "A3 car target")
+        car_price = self._text_value(car.get("priceAsBuilt")) or self._text_value(car_path.get("purchasePrice"))
+        car_value = f"{car_name} {car_price}".strip()
+        cash = self._text_value(finance.get("currentCash"))
+        debt = self._text_value(finance.get("cardLoanBalance"))
+        flexible = self._text_value(finance.get("flexible14"))
+        monthly_room = self._text_value(car_path.get("monthlyRoom"))
+        finance_parts = [
+            f"cash {cash}" if cash else "",
+            f"card/loan {debt}" if debt else "",
+            f"flexible 14d {flexible}" if flexible else "",
+            f"monthly room {monthly_room}" if monthly_room else "",
+        ]
+        finance_line = "; ".join(part for part in finance_parts if part)
+        if readiness.get("label") and readiness.get("reason"):
+            finance_line = f"{readiness['label']}: {readiness['reason']}. {finance_line}".strip()
+        if not finance_line:
+            finance_line = "A3 queue snapshot unavailable; keep the career proof as the main controllable lever."
+
+        bottleneck_label = weakest.get("label") or "Current bottleneck"
+        bottleneck_score = int(weakest.get("score") or 0)
+        target = state.get("target") if isinstance(state.get("target"), dict) else {}
+        role = target.get("north_star_title") or "WDI mechanical R&D"
+        artifact_name = str(step.get("title") or "Make one proof artifact.").rstrip(".")
+        artifact_body = str(step.get("body") or "Create source-backed public proof.").rstrip(".")
+
+        return {
+            "title": "Career proof, income path, car",
+            "summary": (
+                "Current proof artifact first; public career signal next; A3 car path downstream."
+            ),
+            "source": "Imagineer ops + Progress source graph + PhD queue + A3 queue snapshot.",
+            "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
+            "primary_action_id": step.get("decision_id"),
+            "items": [
+                {
+                    "label": "Career",
+                    "value": f"{role}; fit {fit_score}/100",
+                    "detail": f"{bottleneck_label} {bottleneck_score}/100 is the current live gap.",
+                },
+                {
+                    "label": "Proof",
+                    "value": artifact_name,
+                    "detail": f"{artifact_body}; then update the public profile, CV, paper, and Progress record.",
+                },
+                {
+                    "label": "Money",
+                    "value": "Higher-income R&D path",
+                    "detail": "The controllable lever is stronger inspectable ownership proof, not another profile rewrite.",
+                },
+                {
+                    "label": "Car",
+                    "value": car_value,
+                    "detail": finance_line,
+                },
+            ],
+            "a3": {
+                "available": bool(a3_snapshot.get("available", False) or a3_snapshot.get("ok", False)),
+                "source": A3_QUEUE_SNAPSHOT_URL,
+                "generated_at": a3_snapshot.get("generatedAt"),
+                "latest_transaction_date": finance.get("latestTransactionDate"),
+                "car": car_name,
+                "price": car_price,
+                "finance": finance_line,
+            },
+        }
+
+    def _text_value(self, value: Any) -> str:
+        if isinstance(value, dict):
+            text = str(value.get("text") or "").strip()
+            if text:
+                return text
+            raw = value.get("value")
+            if isinstance(raw, (int, float)):
+                return f"${raw:,.0f}"
+        if isinstance(value, (int, float)):
+            return f"${value:,.0f}"
+        return str(value or "").strip()
 
     def _step_decision(
         self,

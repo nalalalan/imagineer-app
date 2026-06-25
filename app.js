@@ -106,6 +106,72 @@ function render(step, ops, progress) {
     link.href = step.href || fallbackStep.href;
     link.textContent = step.linkLabel || "Open doc";
   }
+
+  renderLifeLoop(ops?.life_loop || fallbackLifeLoop(step, ops));
+}
+
+function fallbackLifeLoop(step, ops) {
+  if (!ops) return null;
+  const bottleneck = ops.current_bottleneck;
+  const target = ops.target?.north_star_title || "WDI mechanical R&D";
+  const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
+  return {
+    title: "Career proof, income path, car",
+    summary: "Current proof artifact first; public career signal next; A3 car path downstream.",
+    items: [
+      {
+        label: "Career",
+        value: `${target}; ${fit}`,
+        detail: bottleneck ? `${bottleneck.label} ${bottleneck.score}/100 is the current live gap.` : "Current bottleneck unavailable.",
+      },
+      {
+        label: "Proof",
+        value: String(step.title || "Current proof artifact").replace(/\.$/, ""),
+        detail: `${step.body || "Create source-backed public proof."} Then update profile, CV, paper, and Progress.`,
+      },
+      {
+        label: "Money",
+        value: "Higher-income R&D path",
+        detail: "Stronger inspectable ownership proof is the controllable lever.",
+      },
+      {
+        label: "Car",
+        value: "A3 source pending",
+        detail: "A3 queue snapshot did not load through Imagineer yet.",
+      },
+    ],
+  };
+}
+
+function renderLifeLoop(loop) {
+  const shell = $("#life-loop");
+  const grid = $("#life-loop-grid");
+  if (!shell || !grid || !loop?.items?.length) {
+    setVisible("#life-loop", false);
+    return;
+  }
+
+  setText("#life-loop-title", loop.title || "Career proof, income path, car");
+  setText("#life-loop-summary", loop.summary || "");
+  grid.replaceChildren(...loop.items.slice(0, 4).map(renderLifeItem));
+  setVisible("#life-loop", true);
+}
+
+function renderLifeItem(item) {
+  const row = document.createElement("div");
+  row.className = "life-loop-item";
+
+  const label = document.createElement("span");
+  label.textContent = clean(item.label);
+
+  const value = document.createElement("strong");
+  value.textContent = clean(item.value);
+
+  const detail = document.createElement("p");
+  detail.textContent = clean(item.detail);
+
+  row.append(label, value, detail);
+  return row;
 }
 
 function clean(value) {
