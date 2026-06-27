@@ -4,8 +4,8 @@ const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.loca
 const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
-  title: "Make the FluxCell linkage test.",
-  body: "Capture the note and files in PhD.",
+  title: "Write the linkage-test spec.",
+  body: "One cell sketch + one metric in PhD.",
   why: "",
   time: "7 minutes",
   href: "https://phd.aolabs.io/",
@@ -118,7 +118,7 @@ function fallbackLifeLoop(step, ops) {
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
     title: "Career source, income path, car",
-    summary: "FluxCell evidence first; public career signal next; A3 car path downstream.",
+    summary: "Linkage-test spec first; public career signal next; A3 car path downstream.",
     items: [
       {
         label: "Career",

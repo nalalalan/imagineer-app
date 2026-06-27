@@ -2011,7 +2011,7 @@ class ImagineerSystem:
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "FluxCell evidence first; public career signal next; A3 car path downstream."
+                "Linkage-test spec first; public career signal next; A3 car path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2118,8 +2118,8 @@ class ImagineerSystem:
             {
                 "id": "lock-fluxcell-experiment",
                 "lane": "leadership_network",
-                "title": "Make the FluxCell linkage test.",
-                "body": "Capture the note and files in PhD.",
+                "title": "Write the linkage-test spec.",
+                "body": "One cell sketch + one metric in PhD.",
                 "why": "",
                 "time": "7 minutes",
                 "href": PHD_HOME_URL,
@@ -2252,13 +2252,13 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Make the FluxCell linkage test." if review_count else "Run the autonomous AI review.",
+                "title": "Write the linkage-test spec." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Prototype the actuator-less array, clip-program the shape, and check overhang motion."
+                    "Write one PhD note with the cell sketch, target motion, one measurement metric, and the next bench artifact."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
-                "why": "The principal gap is current ownership. The source now points to a first measurable FluxCell build.",
+                "why": "The principal gap is current ownership. The first useful move is a test spec, not the full build.",
             },
             "application_packet": {
                 "lane": key,
