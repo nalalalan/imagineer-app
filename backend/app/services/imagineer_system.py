@@ -2011,7 +2011,7 @@ class ImagineerSystem:
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "Linkage-test spec first; public career signal next; A3 car path downstream."
+                "Constrained-X overhang sim first; public career signal next; A3 car path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2118,8 +2118,8 @@ class ImagineerSystem:
             {
                 "id": "lock-fluxcell-experiment",
                 "lane": "leadership_network",
-                "title": "Write the linkage-test spec.",
-                "body": "One cell sketch + one metric in PhD.",
+                "title": "Test constrained-X overhang.",
+                "body": "Run X first; if it fails, compare non-collinear equal pairs vs four lines.",
                 "why": "",
                 "time": "7 minutes",
                 "href": PHD_HOME_URL,
@@ -2252,13 +2252,13 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Write the linkage-test spec." if review_count else "Run the autonomous AI review.",
+                "title": "Test constrained-X overhang." if review_count else "Run the autonomous AI review.",
                 "body": (
-                    "Write one PhD note with the cell sketch, target motion, one measurement metric, and the next bench artifact."
+                    "Run the constrained-X overhang simulation. If it fails, compare breaking collinearity while keeping equal pairs against breaking equal pairs into four lines from one cell."
                     if review_count
                     else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
                 ),
-                "why": "The principal gap is current ownership. The first useful move is a test spec, not the full build.",
+                "why": "The principal gap is current ownership. The current decision is linkage topology from the overhang simulation, not a physical build yet.",
             },
             "application_packet": {
                 "lane": key,
