@@ -32,6 +32,9 @@ PHD_HOME_URL = "https://phd.aolabs.io/"
 PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
 PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=80"
+WAVEVIS_CURRENT_GATE_BODY = (
+    "Keep each X cell as one center with four straight legs, then make adjacent X cells share only two-cell connector joints."
+)
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 SOURCE_SYNC_TARGETS = ["PhD", "Progress", "A3", "CV", "paper"]
 
@@ -1784,6 +1787,10 @@ class ImagineerSystem:
                 for token in (
                     "physical connector occupancy",
                     "two-cell connector",
+                    "one center",
+                    "one-center",
+                    "four straight legs",
+                    "four legs",
                     "x-cell connector",
                     "over-occupied physical connector",
                     "four cells meet",
@@ -1802,7 +1809,7 @@ class ImagineerSystem:
                 "status": "active",
                 "title": "WaveVis mechanism gate",
                 "current_step": "Fix WaveVis connector occupancy.",
-                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "body": WAVEVIS_CURRENT_GATE_BODY,
                 "why": (
                     "WaveVis is the active research lane. This immediate mechanism gate moves the mechanical R&D signal "
                     "more than a distant endpoint."
@@ -2211,7 +2218,7 @@ class ImagineerSystem:
                 "id": "fix-wavevis-connector-occupancy",
                 "lane": "leadership_network",
                 "title": "Fix WaveVis connector occupancy.",
-                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "body": WAVEVIS_CURRENT_GATE_BODY,
                 "why": "This is the current WaveVis gate before publication.",
                 "time": "Current work session",
                 "href": "https://aolabs.io/wavevis/",
@@ -2383,7 +2390,7 @@ class ImagineerSystem:
             "leadership_network": {
                 "lane": key,
                 "title": "Fix WaveVis connector occupancy.",
-                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "body": WAVEVIS_CURRENT_GATE_BODY,
                 "why": "The principal gap is current ownership. The current decision is the mechanism gate inside WaveVis, not a distant endpoint.",
             },
             "application_packet": {
