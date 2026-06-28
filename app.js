@@ -5,8 +5,8 @@ const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io"
 
 const fallbackStep = {
   title: "Fix WaveVis connector occupancy.",
-  body: "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
-  why: "WaveVis is the active research lane now; the immediate gate is connector truth, not a distant endpoint.",
+  body: "Keep each X cell as one center with four straight legs, then make adjacent X cells share only two-cell connector joints.",
+  why: "WaveVis is the active research lane now; the immediate gate is X-cell and connector truth, not a distant endpoint.",
   time: "Current work session",
   href: "https://aolabs.io/wavevis/",
   linkLabel: "Open WaveVis",
