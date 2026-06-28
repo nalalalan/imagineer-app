@@ -31,6 +31,7 @@ A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
 PHD_HOME_URL = "https://phd.aolabs.io/"
 PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
+PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=80"
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 SOURCE_SYNC_TARGETS = ["PhD", "Progress", "A3", "CV", "paper"]
 
@@ -280,9 +281,6 @@ class ImagineerSystem:
         state = self._load_state()
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
-        step_decision = self._step_decision(state, dimensions, weakest)
-        next_action = self._next_action(state, weakest)
-        personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
         source_events = [event for event in state["events"] if event.get("kind") in {"source", "proof"}]
         outreach_events = [event for event in state["events"] if event.get("kind") == "outreach"]
@@ -294,6 +292,10 @@ class ImagineerSystem:
         generated_at = _utc_now()
         a3_snapshot = self._a3_queue_snapshot()
         source_intake = self._source_intake_state(state)
+        active_research = source_intake.get("active_research") if isinstance(source_intake.get("active_research"), dict) else {}
+        step_decision = self._step_decision(state, dimensions, weakest, active_research)
+        next_action = self._next_action(state, weakest, active_research=active_research)
+        personal_step = step_decision["step"]
         life_loop = self._life_loop(
             state=state,
             dimensions=dimensions,
@@ -302,6 +304,7 @@ class ImagineerSystem:
             fit_score=fit_score,
             a3_snapshot=a3_snapshot,
             source_intake=source_intake,
+            active_research=active_research,
         )
         reviewer = self._reviewer_report_from_state(state, compact=True)
         lead_verification = self._lead_verification_state(state)
@@ -317,6 +320,7 @@ class ImagineerSystem:
             "next_action": next_action,
             "personal_step": personal_step,
             "life_loop": life_loop,
+            "active_research": active_research,
             "source_intake": source_intake,
             "lead_verification": lead_verification,
             "decision_system": step_decision["system"],
@@ -668,8 +672,10 @@ class ImagineerSystem:
     def ops_check_without_weekly(self, state: dict[str, Any]) -> dict[str, Any]:
         dimensions = self._score_dimensions(state)
         weakest = min(dimensions, key=lambda item: item["score"])
-        step_decision = self._step_decision(state, dimensions, weakest)
-        next_action = self._next_action(state, weakest)
+        source_intake = self._source_intake_state(state)
+        active_research = source_intake.get("active_research") if isinstance(source_intake.get("active_research"), dict) else {}
+        step_decision = self._step_decision(state, dimensions, weakest, active_research)
+        next_action = self._next_action(state, weakest, active_research=active_research)
         personal_step = step_decision["step"]
         active_experiment = self._active_experiment(state)
         source_events = [event for event in state["events"] if event.get("kind") in {"source", "proof"}]
@@ -686,6 +692,8 @@ class ImagineerSystem:
             "current_bottleneck": weakest,
             "next_action": next_action,
             "personal_step": personal_step,
+            "active_research": active_research,
+            "source_intake": source_intake,
             "decision_system": step_decision["system"],
             "reviewer": self._reviewer_report_from_state(state, compact=True),
             "active_experiment": self._experiment_view(active_experiment, state),
@@ -1738,9 +1746,82 @@ class ImagineerSystem:
             }
         return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
 
+    def _progress_work_events(self) -> dict[str, Any]:
+        return self._fetch_json_source(PROGRESS_WORK_EVENTS_URL, read_limit=500_000, timeout=6)
+
+    def _active_research_from_progress(self, progress_state: dict[str, Any]) -> dict[str, Any]:
+        if not progress_state.get("ok"):
+            return {}
+        events = progress_state.get("json", {}).get("events")
+        if not isinstance(events, list):
+            return {}
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            source_ids = event.get("source_ids") or event.get("sourceIds") or []
+            if isinstance(source_ids, str):
+                source_ids = [source_ids]
+            if not isinstance(source_ids, list):
+                source_ids = []
+            search_values = [
+                event.get("title"),
+                event.get("complaint"),
+                event.get("issue"),
+                event.get("body"),
+                event.get("codex_change"),
+                event.get("codexChange"),
+                event.get("changed"),
+                event.get("provenance"),
+                " ".join(str(source_id) for source_id in source_ids),
+            ]
+            search_text = " ".join(str(value or "") for value in search_values).lower()
+            if "wavevis" not in search_text:
+                continue
+            if "handoff" in search_text or "new-chat" in search_text:
+                continue
+            exact_connector_gate = any(
+                token in search_text
+                for token in (
+                    "physical connector occupancy",
+                    "two-cell connector",
+                    "x-cell connector",
+                    "over-occupied physical connector",
+                    "four cells meet",
+                )
+            )
+            title_text = str(event.get("title") or "").lower()
+            wavevis_event = "wavevis" in title_text or any(
+                isinstance(source_id, str) and "wavevis" in source_id.lower() for source_id in source_ids
+            )
+            if not (wavevis_event or exact_connector_gate):
+                continue
+            if not exact_connector_gate and not any(token in search_text for token in ("x-cell", "x cell", "mechanism", "collinear", "opposite pair")):
+                continue
+            title = str(event.get("title") or "WaveVis active research")
+            return {
+                "status": "active",
+                "title": "WaveVis mechanism gate",
+                "current_step": "Fix WaveVis connector occupancy.",
+                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "why": (
+                    "WaveVis is the active research lane. This immediate mechanism gate moves the mechanical R&D signal "
+                    "more than a distant endpoint."
+                ),
+                "time": "Current work session",
+                "href": "https://aolabs.io/wavevis/",
+                "link_label": "Open WaveVis",
+                "source": f"Progress active research event: {title}.",
+                "event_title": title,
+                "event_created_at": event.get("created_at"),
+                "source_ids": [source_id for source_id in source_ids if isinstance(source_id, str)],
+            }
+        return {}
+
     def _source_intake_state(self, state: dict[str, Any]) -> dict[str, Any]:
         app_state = self._fetch_json_source(PHD_APP_STATE_URL, read_limit=2_000_000)
         files_state = self._fetch_json_source(PHD_FILES_URL, read_limit=2_000_000)
+        progress_state = self._progress_work_events()
+        active_research = self._active_research_from_progress(progress_state)
 
         notes = []
         if app_state.get("ok"):
@@ -1767,7 +1848,8 @@ class ImagineerSystem:
         return {
             "title": "Source state",
             "status": status,
-            "current_step": "Capture notes and files in PhD.",
+            "current_step": active_research.get("current_step") or "Capture notes and files in PhD.",
+            "active_research": active_research,
             "sync_targets": SOURCE_SYNC_TARGETS,
             "primary_source": {
                 "name": "phd",
@@ -1788,7 +1870,7 @@ class ImagineerSystem:
             "sources": [
                 {"name": "phd app state", "url": PHD_APP_STATE_URL, "status": "current" if app_state.get("ok") else "unavailable"},
                 {"name": "phd files", "url": PHD_FILES_URL, "status": "current" if files_state.get("ok") else "unavailable"},
-                {"name": "Progress", "url": "https://progress.aolabs.io/api/progress/summary", "status": "current"},
+                {"name": "Progress", "url": PROGRESS_WORK_EVENTS_URL, "status": "current" if progress_state.get("ok") else "unavailable"},
                 {"name": "A3", "url": A3_QUEUE_SNAPSHOT_URL, "status": "checked"},
                 {"name": "CV", "url": "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf", "status": "source"},
             ],
@@ -1974,6 +2056,7 @@ class ImagineerSystem:
         fit_score: int,
         a3_snapshot: dict[str, Any],
         source_intake: dict[str, Any],
+        active_research: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         car = a3_snapshot.get("car") if isinstance(a3_snapshot.get("car"), dict) else {}
         car_path = a3_snapshot.get("carPath") if isinstance(a3_snapshot.get("carPath"), dict) else {}
@@ -2003,15 +2086,16 @@ class ImagineerSystem:
         bottleneck_score = int(weakest.get("score") or 0)
         target = state.get("target") if isinstance(state.get("target"), dict) else {}
         role = target.get("north_star_title") or "WDI mechanical R&D"
-        source_name = str(step.get("title") or "Use the PhD source read.").rstrip(".")
-        source_body = str(step.get("body") or "Capture in PhD.").rstrip(".")
+        active_research = active_research if isinstance(active_research, dict) else {}
+        source_name = str(active_research.get("current_step") or step.get("title") or "Use the PhD source read.").rstrip(".")
+        source_body = str(active_research.get("body") or step.get("body") or "Capture in PhD.").rstrip(".")
         primary_source = source_intake.get("primary_source") if isinstance(source_intake.get("primary_source"), dict) else {}
-        source_detail = primary_source.get("detail") or "PhD notes are current."
+        source_detail = active_research.get("source") or primary_source.get("detail") or "PhD notes are current."
 
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "Constrained-X overhang sim first; public career signal next; A3 car path downstream."
+                "WaveVis mechanism gate now; public career signal follows verified research progress; A3 path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2066,9 +2150,18 @@ class ImagineerSystem:
         state: dict[str, Any],
         dimensions: list[dict[str, Any]],
         weakest: dict[str, Any],
+        active_research: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        candidates = self._step_candidates(state, dimensions, weakest)
+        candidates = self._step_candidates(state, dimensions, weakest, active_research)
         selected = max(candidates, key=lambda item: item["score"])
+        source_note = (
+            selected.get("source_doc")
+            if selected.get("id") == "active-research-progress" and selected.get("source_doc")
+            else (
+                f"Principal signal {self._dimension_score(dimensions, 'leadership_network')}/100. "
+                f"Decision score {selected['score']}/100."
+            )
+        )
         step = {
             "lane": selected["lane"],
             "title": selected["title"],
@@ -2077,10 +2170,7 @@ class ImagineerSystem:
             "time": selected["time"],
             "href": selected["href"],
             "linkLabel": selected.get("link_label") or "Open",
-            "source": (
-                f"Principal signal {self._dimension_score(dimensions, 'leadership_network')}/100. "
-                f"Decision score {selected['score']}/100."
-            ),
+            "source": source_note,
             "urgency": selected["urgency"],
             "decision_score": selected["score"],
             "decision_id": selected["id"],
@@ -2112,20 +2202,22 @@ class ImagineerSystem:
         state: dict[str, Any],
         dimensions: list[dict[str, Any]],
         weakest: dict[str, Any],
+        active_research: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         phd_doc = PHD_HOME_URL
+        active_research = active_research if isinstance(active_research, dict) else {}
         candidates = [
             {
-                "id": "lock-fluxcell-experiment",
+                "id": "fix-wavevis-connector-occupancy",
                 "lane": "leadership_network",
-                "title": "Test constrained-X overhang.",
-                "body": "Run X first; if it fails, compare non-collinear equal pairs vs four lines.",
-                "why": "",
-                "time": "7 minutes",
-                "href": PHD_HOME_URL,
-                "link_label": "Open phd",
+                "title": "Fix WaveVis connector occupancy.",
+                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "why": "This is the current WaveVis gate before publication.",
+                "time": "Current work session",
+                "href": "https://aolabs.io/wavevis/",
+                "link_label": "Open WaveVis",
                 "source_doc": phd_doc,
-                "urgency": "current ownership is the live failure point",
+                "urgency": "active research now",
                 "role_alignment": 24,
                 "bottleneck_relief": 24,
                 "evidence_created": 22,
@@ -2203,6 +2295,29 @@ class ImagineerSystem:
                 "gate_penalty": 0,
             },
         ]
+        if active_research.get("current_step") and active_research.get("body"):
+            candidates.insert(
+                0,
+                {
+                    "id": "active-research-progress",
+                    "lane": "leadership_network",
+                    "title": active_research.get("current_step"),
+                    "body": active_research.get("body"),
+                    "why": active_research.get("why") or "This is the active research lane from Progress.",
+                    "time": active_research.get("time") or "Current work session",
+                    "href": active_research.get("href") or "https://aolabs.io/wavevis/",
+                    "link_label": active_research.get("link_label") or "Open WaveVis",
+                    "source_doc": active_research.get("source"),
+                    "urgency": "active research now",
+                    "role_alignment": 28,
+                    "bottleneck_relief": 28,
+                    "evidence_created": 28,
+                    "compounding": 18,
+                    "urgency_score": 16,
+                    "friction": 4,
+                    "gate_penalty": 0,
+                },
+            )
         for candidate in candidates:
             candidate["score"] = max(
                 0,
@@ -2223,14 +2338,29 @@ class ImagineerSystem:
         match = next((item for item in dimensions if item.get("key") == key), None)
         return int((match or {}).get("score") or 0)
 
-    def _next_action(self, state: dict[str, Any], weakest: dict[str, Any], allow_openai: bool = False) -> dict[str, Any]:
+    def _next_action(
+        self,
+        state: dict[str, Any],
+        weakest: dict[str, Any],
+        allow_openai: bool = False,
+        active_research: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         if allow_openai:
             generated = self._openai_action(state, weakest)
             if generated:
                 return generated
 
         key = weakest["key"]
-        review_count = len(state.get("reviews", []))
+        active_research = active_research if isinstance(active_research, dict) else {}
+        if active_research.get("current_step") and active_research.get("body"):
+            return {
+                "lane": key,
+                "title": active_research.get("current_step"),
+                "body": active_research.get("body"),
+                "why": active_research.get("why") or "This is the active research lane from Progress.",
+                "href": active_research.get("href") or "https://aolabs.io/wavevis/",
+                "linkLabel": active_research.get("link_label") or "Open WaveVis",
+            }
         actions = {
             "mechanical_depth": {
                 "lane": key,
@@ -2252,13 +2382,9 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Test constrained-X overhang." if review_count else "Run the autonomous AI review.",
-                "body": (
-                    "Run the constrained-X overhang simulation. If it fails, compare breaking collinearity while keeping equal pairs against breaking equal pairs into four lines from one cell."
-                    if review_count
-                    else "Pull current role, profile, portfolio, and Disney Research context into the AI review, then route the result into one system-owned update."
-                ),
-                "why": "The principal gap is current ownership. The current decision is linkage topology from the overhang simulation, not a physical build yet.",
+                "title": "Fix WaveVis connector occupancy.",
+                "body": "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+                "why": "The principal gap is current ownership. The current decision is the mechanism gate inside WaveVis, not a distant endpoint.",
             },
             "application_packet": {
                 "lane": key,

@@ -4,12 +4,12 @@ const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.loca
 const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
-  title: "Test constrained-X overhang.",
-  body: "Run X first; if it fails, compare non-collinear equal pairs vs four lines.",
-  why: "",
-  time: "7 minutes",
-  href: "https://phd.aolabs.io/",
-  linkLabel: "Open phd",
+  title: "Fix WaveVis connector occupancy.",
+  body: "Add the physical joint occupancy check, then make adjacent X cells share only two-cell connector joints.",
+  why: "WaveVis is the active research lane now; the immediate gate is connector truth, not a distant endpoint.",
+  time: "Current work session",
+  href: "https://aolabs.io/wavevis/",
+  linkLabel: "Open WaveVis",
   source: "Fallback step. Progress state did not load.",
   updatedAt: new Date().toISOString(),
 };
@@ -62,6 +62,16 @@ async function loadState() {
 }
 
 function bestStep(ops, progress) {
+  const progressStep = progress?.goals?.imagineer?.nextStep;
+  if (isActiveResearchStep(progressStep)) {
+    return {
+      ...fallbackStep,
+      ...progressStep,
+      source: progressStep.source || "Progress active research state.",
+      updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
+    };
+  }
+
   const opsStep = ops?.personal_step || ops?.next_action;
   if (opsStep?.title && opsStep?.body) {
     return {
@@ -74,7 +84,6 @@ function bestStep(ops, progress) {
     };
   }
 
-  const progressStep = progress?.goals?.imagineer?.nextStep;
   if (progressStep?.title && progressStep?.body) {
     return {
       ...fallbackStep,
@@ -85,6 +94,12 @@ function bestStep(ops, progress) {
   }
 
   return fallbackStep;
+}
+
+function isActiveResearchStep(step) {
+  if (!step?.title || !step?.body) return false;
+  const text = `${step.priority || ""} ${step.title} ${step.body}`.toLowerCase();
+  return text.includes("active_research_now") || (text.includes("wavevis") && text.includes("connector"));
 }
 
 function render(step, ops, progress) {
@@ -118,7 +133,7 @@ function fallbackLifeLoop(step, ops) {
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
     title: "Career source, income path, car",
-  summary: "Constrained-X overhang sim first; public career signal next; A3 car path downstream.",
+    summary: "WaveVis mechanism gate now; public career signal follows verified research progress; A3 path downstream.",
     items: [
       {
         label: "Career",
