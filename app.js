@@ -46,32 +46,16 @@ async function request(url, options = {}) {
 }
 
 async function loadState() {
-  setText("#step-title", "Loading current step.");
-  setText("#step-body", "Reading Progress and Imagineer state.");
-  setVisible("#step-why", false);
-  setVisible("#step-meta", false);
+  render(fallbackStep, null, null);
 
-  const [opsResult, progressResult] = await Promise.allSettled([
-    request(`${apiBase}/api/imagineer/ops-check`),
-    request(`${progressApiBase}/api/progress/summary`, { timeout: 12000 }),
-  ]);
+  const ops = await request(`${apiBase}/api/imagineer/ops-check`).catch(() => null);
+  render(bestStep(ops, null), ops, null);
 
-  const ops = opsResult.status === "fulfilled" ? opsResult.value : null;
-  const progress = progressResult.status === "fulfilled" ? progressResult.value : null;
+  const progress = await request(`${progressApiBase}/api/progress/summary`, { timeout: 12000 }).catch(() => null);
   render(bestStep(ops, progress), ops, progress);
 }
 
 function bestStep(ops, progress) {
-  const progressStep = progress?.goals?.imagineer?.nextStep;
-  if (isActiveResearchStep(progressStep)) {
-    return {
-      ...fallbackStep,
-      ...progressStep,
-      source: progressStep.source || "Progress active research state.",
-      updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
-    };
-  }
-
   const opsStep = ops?.personal_step || ops?.next_action;
   if (opsStep?.title && opsStep?.body) {
     return {
@@ -81,6 +65,16 @@ function bestStep(ops, progress) {
       href: opsStep.href || fallbackStep.href,
       source: opsStep.source || "Imagineer state.",
       updatedAt: ops?.generated_at || ops?.profile?.updated_at,
+    };
+  }
+
+  const progressStep = progress?.goals?.imagineer?.nextStep;
+  if (isActiveResearchStep(progressStep)) {
+    return {
+      ...fallbackStep,
+      ...progressStep,
+      source: progressStep.source || "Progress active research state.",
+      updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
     };
   }
 
