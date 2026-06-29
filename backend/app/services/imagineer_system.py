@@ -33,7 +33,7 @@ PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
 PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=80"
 WAVEVIS_CURRENT_GATE_BODY = (
-    "Keep each X cell as one center with four straight legs, then make adjacent X cells share only two-cell connector joints."
+    "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference."
 )
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
 SOURCE_SYNC_TARGETS = ["PhD", "Progress", "A3", "CV", "paper"]
@@ -1782,7 +1782,7 @@ class ImagineerSystem:
                 continue
             if "handoff" in search_text or "new-chat" in search_text:
                 continue
-            exact_connector_gate = any(
+            active_wavevis_gate = any(
                 token in search_text
                 for token in (
                     "physical connector occupancy",
@@ -1794,25 +1794,32 @@ class ImagineerSystem:
                     "x-cell connector",
                     "over-occupied physical connector",
                     "four cells meet",
+                    "reference-shape",
+                    "reference shape",
+                    "tube reference",
+                    "june 24",
                 )
             )
             title_text = str(event.get("title") or "").lower()
             wavevis_event = "wavevis" in title_text or any(
                 isinstance(source_id, str) and "wavevis" in source_id.lower() for source_id in source_ids
             )
-            if not (wavevis_event or exact_connector_gate):
+            if not (wavevis_event or active_wavevis_gate):
                 continue
-            if not exact_connector_gate and not any(token in search_text for token in ("x-cell", "x cell", "mechanism", "collinear", "opposite pair")):
+            if not active_wavevis_gate and not any(
+                token in search_text
+                for token in ("x-cell", "x cell", "mechanism", "collinear", "opposite pair", "reference")
+            ):
                 continue
             title = str(event.get("title") or "WaveVis active research")
             return {
                 "status": "active",
-                "title": "WaveVis mechanism gate",
-                "current_step": "Fix WaveVis connector occupancy.",
+                "title": "WaveVis reference-shape gate",
+                "current_step": "Close WaveVis reference-shape match.",
                 "body": WAVEVIS_CURRENT_GATE_BODY,
                 "why": (
-                    "WaveVis is the active research lane. This immediate mechanism gate moves the mechanical R&D signal "
-                    "more than a distant endpoint."
+                    "WaveVis is the active research lane. The connector proof is verified; the remaining gate is "
+                    "reference-shape identity."
                 ),
                 "time": "Current work session",
                 "href": "https://aolabs.io/wavevis/",
@@ -2102,7 +2109,7 @@ class ImagineerSystem:
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "WaveVis mechanism gate now; public career signal follows verified research progress; A3 path downstream."
+                "WaveVis reference-shape gate now; public career signal follows verified research progress; A3 path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2215,11 +2222,11 @@ class ImagineerSystem:
         active_research = active_research if isinstance(active_research, dict) else {}
         candidates = [
             {
-                "id": "fix-wavevis-connector-occupancy",
+                "id": "close-wavevis-reference-shape-match",
                 "lane": "leadership_network",
-                "title": "Fix WaveVis connector occupancy.",
+                "title": "Close WaveVis reference-shape match.",
                 "body": WAVEVIS_CURRENT_GATE_BODY,
-                "why": "This is the current WaveVis gate before publication.",
+                "why": "This is the current WaveVis gate after the connector proof.",
                 "time": "Current work session",
                 "href": "https://aolabs.io/wavevis/",
                 "link_label": "Open WaveVis",
@@ -2389,9 +2396,9 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Fix WaveVis connector occupancy.",
+                "title": "Close WaveVis reference-shape match.",
                 "body": WAVEVIS_CURRENT_GATE_BODY,
-                "why": "The principal gap is current ownership. The current decision is the mechanism gate inside WaveVis, not a distant endpoint.",
+                "why": "The principal gap is current ownership. The current decision is the reference-shape gate inside WaveVis, not a distant endpoint.",
             },
             "application_packet": {
                 "lane": key,

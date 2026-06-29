@@ -4,9 +4,9 @@ const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.loca
 const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
-  title: "Fix WaveVis connector occupancy.",
-  body: "Keep each X cell as one center with four straight legs, then make adjacent X cells share only two-cell connector joints.",
-  why: "WaveVis is the active research lane now; the immediate gate is X-cell and connector truth, not a distant endpoint.",
+  title: "Close WaveVis reference-shape match.",
+  body: "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference.",
+  why: "WaveVis is the active research lane now; the connector proof is verified, and the remaining gate is reference-shape identity.",
   time: "Current work session",
   href: "https://aolabs.io/wavevis/",
   linkLabel: "Open WaveVis",
@@ -99,7 +99,7 @@ function bestStep(ops, progress) {
 function isActiveResearchStep(step) {
   if (!step?.title || !step?.body) return false;
   const text = `${step.priority || ""} ${step.title} ${step.body}`.toLowerCase();
-  return text.includes("active_research_now") || (text.includes("wavevis") && text.includes("connector"));
+  return text.includes("active_research_now") || (text.includes("wavevis") && (text.includes("connector") || text.includes("reference")));
 }
 
 function render(step, ops, progress) {
@@ -133,7 +133,7 @@ function fallbackLifeLoop(step, ops) {
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
     title: "Career source, income path, car",
-    summary: "WaveVis mechanism gate now; public career signal follows verified research progress; A3 path downstream.",
+    summary: "WaveVis reference-shape gate now; public career signal follows verified research progress; A3 path downstream.",
     items: [
       {
         label: "Career",
