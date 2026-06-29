@@ -68,32 +68,10 @@ function bestStep(ops, progress) {
     };
   }
 
-  const progressStep = progress?.goals?.imagineer?.nextStep;
-  if (isActiveResearchStep(progressStep)) {
-    return {
-      ...fallbackStep,
-      ...progressStep,
-      source: progressStep.source || "Progress active research state.",
-      updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
-    };
-  }
-
-  if (progressStep?.title && progressStep?.body) {
-    return {
-      ...fallbackStep,
-      ...progressStep,
-      source: progressStep.source || "Progress scan.",
-      updatedAt: progressStep.updatedAt || progress?.latest?.createdAt || progress?.updatedAt,
-    };
-  }
-
-  return fallbackStep;
-}
-
-function isActiveResearchStep(step) {
-  if (!step?.title || !step?.body) return false;
-  const text = `${step.priority || ""} ${step.title} ${step.body}`.toLowerCase();
-  return text.includes("active_research_now") || (text.includes("wavevis") && (text.includes("connector") || text.includes("reference")));
+  return {
+    ...fallbackStep,
+    updatedAt: progress?.latest?.createdAt || progress?.updatedAt || fallbackStep.updatedAt,
+  };
 }
 
 function render(step, ops, progress) {
