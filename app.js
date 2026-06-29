@@ -1,6 +1,6 @@
-const railwayApiBase = "https://imagineer-app-production.up.railway.app";
-const sameOriginApiHosts = new Set(["localhost", "127.0.0.1", "imagineer-app-production.up.railway.app"]);
-const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.location.hostname) ? "" : railwayApiBase);
+const publicApiBase = "https://imagineer.aolabs.io";
+const sameOriginApiHosts = new Set(["localhost", "127.0.0.1", "imagineer.aolabs.io", "imagineer-app-production.up.railway.app"]);
+const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.location.hostname) ? "" : publicApiBase);
 const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
