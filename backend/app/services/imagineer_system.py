@@ -55,12 +55,12 @@ DEFAULT_STATE: dict[str, Any] = {
         "company": "Walt Disney Imagineering",
         "location": "Glendale, California",
         "active_listing_job_id": "10134485",
-        "active_listing_posted": "2026-06-23",
+        "active_listing_posted": "2026-06-25",
         "active_listing_url": VERIFIED_DISNEY_JOB_URL,
         "active_listing_state": "verified_live_listing",
-        "active_listing_last_checked_at": "2026-06-25T13:15:30+00:00",
+        "active_listing_last_checked_at": "2026-06-29T13:13:24.306032+00:00",
         "active_listing_last_status_code": 200,
-        "active_listing_note": "Disney Careers destination verified live on 2026-06-25 at 9:15 AM ET: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
+        "active_listing_note": "Disney Careers destination verified live on 2026-06-29 at 9:13 AM ET: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. The destination page lists a Jun. 25, 2026 posting date. This is a lead only; no application, outreach, referral, relationship, or hiring claim is created.",
         "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride development, not proof of R&D hiring fit.",
     },
     "positioning": POSITIONING_LINE,
@@ -530,6 +530,8 @@ class ImagineerSystem:
                 target["active_listing_last_checked_at"] = result["checked_at"]
                 target["active_listing_last_status_code"] = result.get("status_code")
                 target["active_listing_note"] = result.get("note", "")
+                if result.get("posted_date"):
+                    target["active_listing_posted"] = result["posted_date"]
             self._save_state(state)
             return {
                 "ok": bool(result.get("ok")),
@@ -2022,6 +2024,7 @@ class ImagineerSystem:
         lowered = text.lower()
         unavailable = status_code == 404 or "job not found" in lowered or "no longer available" in lowered
         matched = self._lead_destination_match(text, target)
+        posted_date = self._extract_disney_posted_date(body, text)
         if matched and not unavailable:
             return {
                 "ok": True,
@@ -2029,6 +2032,7 @@ class ImagineerSystem:
                 "url": url,
                 "status_code": status_code,
                 "listing_state": "verified_live_listing",
+                "posted_date": posted_date,
                 "note": "Disney Careers destination verified live with matching title, company, and location. Lead only; no application, outreach, referral, relationship, or hiring claim.",
             }
         if unavailable:
@@ -2038,6 +2042,7 @@ class ImagineerSystem:
                 "url": url,
                 "status_code": status_code,
                 "listing_state": "unavailable_on_last_check",
+                "posted_date": posted_date,
                 "note": "Disney Careers destination is unavailable or says Job Not Found.",
             }
         return {
@@ -2046,6 +2051,7 @@ class ImagineerSystem:
             "url": url,
             "status_code": status_code,
             "listing_state": "verification_mismatch",
+            "posted_date": posted_date,
             "note": "Destination loaded, but title/company/location did not all match the tracked lead.",
         }
 
@@ -2059,6 +2065,36 @@ class ImagineerSystem:
         company_ok = company in lowered or "walt disney imagineering" in lowered
         location_ok = "glendale" in lowered or location in lowered
         return bool(title_ok and company_ok and location_ok)
+
+    def _extract_disney_posted_date(self, body: str, text: str) -> str:
+        candidates = [
+            r'"datePosted"\s*:\s*"([^"]+)"',
+            r"data-tm-job-date-posted=['\"]([^'\"]+)['\"]",
+            r"Date posted\s+([A-Za-z]{3,9}\.?\s+\d{1,2},\s+\d{4})",
+        ]
+        for pattern in candidates:
+            source = body if "data-tm" in pattern or "datePosted" in pattern else text
+            match = re.search(pattern, source, flags=re.IGNORECASE)
+            if not match:
+                continue
+            raw = match.group(1).strip()
+            parsed = self._parse_disney_date(raw)
+            if parsed:
+                return parsed
+        return ""
+
+    def _parse_disney_date(self, value: str) -> str:
+        normalized = " ".join(value.replace("Sept.", "Sep.").split())
+        for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%b. %d, %Y", "%b %d, %Y", "%B %d, %Y"):
+            try:
+                return datetime.strptime(normalized, fmt).date().isoformat()
+            except ValueError:
+                continue
+        match = re.fullmatch(r"(\d{4})-(\d{1,2})-(\d{1,2})", normalized)
+        if match:
+            year, month, day = (int(part) for part in match.groups())
+            return datetime(year, month, day).date().isoformat()
+        return ""
 
     def _life_loop(
         self,
