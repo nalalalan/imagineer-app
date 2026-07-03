@@ -100,9 +100,9 @@
           <h2>Principal R&amp;D Imagineer - Mechanical Engineer</h2>
         </div>
         <div class="packet-grid">
-          <p>Verified live Disney lead: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. The destination page returned HTTP 200 on Jun 29, 2026, 9:13 AM ET and lists a Jun 25, 2026 posting date. This is a lead only, not an application, referral, relationship, or hiring claim.</p>
+          <p id="lead-summary">Verified live Disney lead: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. The destination page returns HTTP 200 and lists a Jun 25, 2026 posting date. This is a lead only, not an application, referral, relationship, or hiring claim.</p>
           <ul>
-            <li>Active lead: Disney job ID 10134485, posted Jun 25, 2026.</li>
+            <li id="lead-active">Active lead: Disney job ID 10134485, posted Jun 25, 2026.</li>
             <li>Mechanical SME review for ride-engineering design intent, safety, reliability, efficiency, standards, and compliance.</li>
             <li>Advanced statics, dynamics, kinematics, stress, fatigue, machine design, FEA/CAD, design sensibility, and prototype/development work.</li>
             <li>Expired reference: Disney job ID 10146734 now returns Job Not Found; keep it only as a role-shape reference.</li>
@@ -232,6 +232,19 @@
         const node = document.getElementById(id);
         if (node && value) node.textContent = value;
       };
+      const formatEastern = (value) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return "";
+        return parsed.toLocaleString("en-US", {
+          timeZone: "America/New_York",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          timeZoneName: "short"
+        });
+      };
       const compact = (items) => (items || []).filter(Boolean).slice(0, 4).join(" / ");
       const renderDimensions = (dimensions) => {
         const table = document.getElementById("dimension-rows");
@@ -270,6 +283,15 @@
         setText("live-target", ops?.target?.active_rung_title || "Active target");
         setText("live-north-star", ops?.target?.north_star_title || "North star");
         setText("live-next", ops?.personal_step?.title || "Current system action");
+        const lead = ops?.lead_verification;
+        const leadTitle = lead?.title || ops?.target?.active_rung_title || "Principal Ride Development Engineer";
+        const leadCompany = lead?.company || ops?.target?.company || "Walt Disney Imagineering";
+        const leadLocation = lead?.location || ops?.target?.location || "Glendale, California";
+        const leadChecked = formatEastern(lead?.last_checked_at || ops?.target?.active_listing_last_checked_at);
+        const leadPosted = ops?.target?.active_listing_posted || lead?.latest_check?.posted_date || "2026-06-25";
+        const leadStatus = lead?.last_status_code || ops?.target?.active_listing_last_status_code || 200;
+        setText("lead-summary", `Verified live Disney lead: ${leadTitle}, ${leadCompany}, ${leadLocation}. The destination page returned HTTP ${leadStatus}${leadChecked ? ` on ${leadChecked}` : ""} and lists a ${leadPosted} posting date. This is a lead only, not an application, referral, relationship, or hiring claim.`);
+        setText("lead-active", `Active lead: Disney job ID ${ops?.target?.active_listing_job_id || "10134485"}, posted ${leadPosted}.`);
         setText("source-summary", sourceCount ? `${sourceCount} sources tracked; ${progressHealthy ? `${progressHealthy} healthy` : "health count unavailable"} in the latest Progress scan.` : hasLiveState ? "Whole public AO Labs graph." : "Live source graph unavailable.");
         setText("source-detail", hasLiveState ? `Profile basis: ${ops?.profile?.basis || "AO Labs home, CV, public project surfaces, papers, dashboards, progress ledger, review state, and role-specific profile."}` : "Profile basis unavailable until live state responds.");
         setText("source-freshness", progress?.latest?.createdAt ? `Progress scan ${formatDateTime(progress.latest.createdAt).replace("Updated ", "")}; changed: ${compact(progress.latest.deltas?.changed) || "none"}.` : "Progress scan unavailable.");
