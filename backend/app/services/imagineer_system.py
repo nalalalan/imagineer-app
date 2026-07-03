@@ -31,6 +31,7 @@ A3_QUEUE_SNAPSHOT_URL = "https://a3.aolabs.io/api/queue-snapshot"
 PHD_HOME_URL = "https://phd.aolabs.io/"
 PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
+PHD_RESEARCH_NOTES_URL = "https://phd.aolabs.io/api/research-notes"
 PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=80"
 WAVEVIS_CURRENT_GATE_BODY = (
     "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference."
@@ -1836,6 +1837,7 @@ class ImagineerSystem:
     def _source_intake_state(self, state: dict[str, Any]) -> dict[str, Any]:
         app_state = self._fetch_json_source(PHD_APP_STATE_URL, read_limit=2_000_000)
         files_state = self._fetch_json_source(PHD_FILES_URL, read_limit=2_000_000)
+        research_state = self._fetch_json_source(PHD_RESEARCH_NOTES_URL, read_limit=2_000_000)
         progress_state = self._progress_work_events()
         active_research = self._active_research_from_progress(progress_state)
 
@@ -1849,15 +1851,23 @@ class ImagineerSystem:
         if files_state.get("ok") and isinstance(files_state.get("json", {}).get("files"), list):
             files = [item for item in files_state["json"]["files"] if isinstance(item, dict)]
 
+        research_records = []
+        if research_state.get("ok") and isinstance(research_state.get("json", {}).get("records"), list):
+            research_records = [item for item in research_state["json"]["records"] if isinstance(item, dict)]
+
         latest_note_at = self._latest_record_time(notes, ("updatedAt", "createdAt", "capturedAt"))
         latest_file_at = self._latest_record_time(files, ("sourceCreatedAt", "createdAt", "capturedAt"))
-        topics = self._phd_topic_flags(notes)
-        status = "current" if app_state.get("ok") or files_state.get("ok") else "unavailable"
+        latest_research_at = self._latest_record_time(research_records, ("sourceCreatedAt", "updatedAt", "createdAt"))
+        topics = self._phd_topic_flags(notes, research_records)
+        meeting_count = sum(1 for record in research_records if "meeting" in str(record.get("kind") or ""))
+        status = "current" if app_state.get("ok") or files_state.get("ok") or research_state.get("ok") else "unavailable"
         note_detail = (
             "PhD notes are current."
             if app_state.get("ok")
             else f"PhD notes unavailable: {app_state.get('error', 'unknown')}."
         )
+        if research_state.get("ok") and research_records:
+            note_detail = f"PhD research notes are current; {len(research_records)} source records, {meeting_count} meeting records."
         if topics:
             note_detail = f"Active source flags: {', '.join(topics)}."
 
@@ -1873,6 +1883,9 @@ class ImagineerSystem:
                 "status": "current" if app_state.get("ok") else "unavailable",
                 "note_count": len(notes) if app_state.get("ok") else None,
                 "latest_note_at": latest_note_at,
+                "latest_research_at": latest_research_at,
+                "research_record_count": len(research_records) if research_state.get("ok") else None,
+                "research_meeting_count": meeting_count if research_state.get("ok") else None,
                 "detail": note_detail,
                 "topics": topics,
             },
@@ -1886,6 +1899,7 @@ class ImagineerSystem:
             "sources": [
                 {"name": "phd app state", "url": PHD_APP_STATE_URL, "status": "current" if app_state.get("ok") else "unavailable"},
                 {"name": "phd files", "url": PHD_FILES_URL, "status": "current" if files_state.get("ok") else "unavailable"},
+                {"name": "phd research notes", "url": PHD_RESEARCH_NOTES_URL, "status": "current" if research_state.get("ok") else "unavailable"},
                 {"name": "Progress", "url": PROGRESS_WORK_EVENTS_URL, "status": "current" if progress_state.get("ok") else "unavailable"},
                 {"name": "A3", "url": A3_QUEUE_SNAPSHOT_URL, "status": "checked"},
                 {"name": "CV", "url": "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf", "status": "source"},
@@ -1928,9 +1942,19 @@ class ImagineerSystem:
                     break
         return latest_raw
 
-    def _phd_topic_flags(self, notes: list[dict[str, Any]]) -> list[str]:
-        recent_text = "\n".join(str(note.get("text") or "") for note in notes[:12]).lower()
+    def _phd_topic_flags(self, notes: list[dict[str, Any]], research_records: list[dict[str, Any]] | None = None) -> list[str]:
+        research_records = research_records or []
+        recent_note_text = "\n".join(str(note.get("text") or "") for note in notes[:12])
+        recent_research_text = "\n".join(
+            " ".join(
+                str(record.get(key) or "")
+                for key in ("kind", "title", "name", "excerpt")
+            )
+            for record in research_records[:12]
+        )
+        recent_text = f"{recent_note_text}\n{recent_research_text}".lower()
         topic_defs = [
+            ("research meetings", ("research-meeting", "meeting", "transcript", "advisor call", "pratap", "cagdas")),
             ("paper comments", ("paper", "comment", "overleaf", "advisor")),
             ("cell geometry", ("cell geometry", "linkage", "collinear", "opposite", "overhang")),
             ("EPM valve", ("epm", "electropermanent", "valve", "magnet")),
