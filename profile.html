@@ -297,7 +297,12 @@
         setText("source-freshness", progress?.latest?.createdAt ? `Progress scan ${formatDateTime(progress.latest.createdAt).replace("Updated ", "")}; changed: ${compact(progress.latest.deltas?.changed) || "none"}.` : "Progress scan unavailable.");
         setText("system-step", ops?.personal_step ? `${ops.personal_step.title} ${ops.personal_step.body}` : "Current system action unavailable.");
         setText("system-why", ops?.personal_step?.why || ops?.next_action?.why || "Principal signal depends on current ownership, not only completed past work.");
-        setText("system-metrics", ops?.evidence ? `${ops.evidence.ai_reviews} AI reviews; ${ops.evidence.journal_entries} journal entries; ${ops.evidence.proof_events} event logs; ${ops.evidence.outreach_events} outreach events.` : "System metrics unavailable.");
+        if (ops?.evidence) {
+          const eventLogs = ops.evidence.source_events ?? ops.evidence.work_logs ?? 0;
+          setText("system-metrics", `${ops.evidence.ai_reviews} AI reviews; ${ops.evidence.journal_entries} journal entries; ${eventLogs} source events; ${ops.evidence.outreach_events} outreach events.`);
+        } else {
+          setText("system-metrics", "System metrics unavailable.");
+        }
         renderDimensions(ops?.dimensions);
         document.body.dataset.profileState = hasLiveState ? "loaded" : "unavailable";
       }).catch(() => {
