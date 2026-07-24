@@ -106,6 +106,32 @@ class CurrentResearchSelectionTests(unittest.TestCase):
 
         self.assertEqual(selected, {})
 
+    def test_brain_only_result_does_not_claim_progress_corroboration(self) -> None:
+        selected = self.system._active_research_from_sources(
+            brain_state={
+                "ok": True,
+                "json": {
+                    "files": [
+                        {
+                            "name": "current-pressure-test.pdf",
+                            "kind": "generated pdf",
+                            "createdAt": self._iso(timedelta(hours=-1)),
+                            "sourceText": (
+                                "The current Cellular Soft Robots pressure test needs zero psi and a consistent "
+                                "initial cell width."
+                            ),
+                        }
+                    ]
+                },
+            },
+            progress_state={"ok": False},
+            progress_summary_state={"ok": False},
+        )
+
+        self.assertEqual(selected["corroboration_count"], 1)
+        self.assertIn("Brain's newest", selected["why"])
+        self.assertNotIn("Progress", selected["why"])
+
 
 if __name__ == "__main__":
     unittest.main()

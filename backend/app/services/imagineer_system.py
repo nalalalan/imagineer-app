@@ -1831,9 +1831,29 @@ class ImagineerSystem:
                     if isinstance(source_id, str)
                 )
             )
-            result["corroboration_count"] = len(
-                {str(item.get("source_kind") or "") for item in lane_candidates if item.get("source_kind")}
-            )
+            source_kinds = {
+                str(item.get("source_kind") or "")
+                for item in lane_candidates
+                if item.get("source_kind")
+            }
+            result["corroboration_count"] = len(source_kinds)
+            if result.get("research_lane") == "cellular_soft_robots":
+                has_brain = "brain" in source_kinds
+                has_progress = any(source_kind.startswith("progress") for source_kind in source_kinds)
+                if has_brain and has_progress:
+                    result["why"] = (
+                        "Brain's newest career-relevant note is about reproducible pressure-width data, and Progress "
+                        "shows the Cellular Soft Robots manuscript is the active research record."
+                    )
+                elif has_brain:
+                    result["why"] = (
+                        "Brain's newest career-relevant note identifies reproducible Cellular Soft Robots "
+                        "pressure-width data as the current research gate."
+                    )
+                elif has_progress:
+                    result["why"] = (
+                        "Progress identifies Cellular Soft Robots as the newest career-relevant research record."
+                    )
             merged.append(result)
 
         selected = max(
