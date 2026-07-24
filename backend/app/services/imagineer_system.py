@@ -33,7 +33,7 @@ PHD_HOME_URL = "https://phd.aolabs.io/"
 PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
 PHD_RESEARCH_NOTES_URL = "https://phd.aolabs.io/api/research-notes"
-PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=40"
+PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=10"
 PROGRESS_SUMMARY_URL = "https://progress.aolabs.io/api/progress/summary"
 BRAIN_FILES_URL = "https://brain-aolabs-io-production.up.railway.app/api/files"
 WAVEVIS_CURRENT_GATE_BODY = (
@@ -1762,7 +1762,7 @@ class ImagineerSystem:
         return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
 
     def _progress_work_events(self) -> dict[str, Any]:
-        return self._fetch_json_source(PROGRESS_WORK_EVENTS_URL, read_limit=500_000, timeout=15)
+        return self._fetch_json_source(PROGRESS_WORK_EVENTS_URL, read_limit=500_000, timeout=35)
 
     def _progress_summary(self) -> dict[str, Any]:
         return self._fetch_json_source(PROGRESS_SUMMARY_URL, read_limit=2_000_000, timeout=15)

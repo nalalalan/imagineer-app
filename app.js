@@ -48,10 +48,10 @@ async function request(url, options = {}) {
 async function loadState() {
   render(fallbackStep, null, null);
 
-  const ops = await request(`${apiBase}/api/imagineer/ops-check`, { timeout: 30000 }).catch(() => null);
+  const ops = await request(`${apiBase}/api/imagineer/ops-check`, { timeout: 45000 }).catch(() => null);
   render(bestStep(ops, null), ops, null);
 
-  const progress = await request(`${progressApiBase}/api/progress/summary`, { timeout: 30000 }).catch(() => null);
+  const progress = await request(`${progressApiBase}/api/progress/summary`, { timeout: 45000 }).catch(() => null);
   render(bestStep(ops, progress), ops, progress);
 }
 
