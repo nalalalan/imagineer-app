@@ -7,6 +7,7 @@ import os
 import re
 import threading
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -32,12 +33,15 @@ PHD_HOME_URL = "https://phd.aolabs.io/"
 PHD_APP_STATE_URL = "https://phd.aolabs.io/api/app-state"
 PHD_FILES_URL = "https://phd.aolabs.io/api/files"
 PHD_RESEARCH_NOTES_URL = "https://phd.aolabs.io/api/research-notes"
-PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=80"
+PROGRESS_WORK_EVENTS_URL = "https://progress.aolabs.io/api/progress/work-events?limit=40"
+PROGRESS_SUMMARY_URL = "https://progress.aolabs.io/api/progress/summary"
+BRAIN_FILES_URL = "https://brain-aolabs-io-production.up.railway.app/api/files"
 WAVEVIS_CURRENT_GATE_BODY = (
     "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference."
 )
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
-SOURCE_SYNC_TARGETS = ["PhD", "Progress", "A3", "CV", "paper"]
+SOURCE_SYNC_TARGETS = ["Brain", "PhD", "Progress", "A3", "CV", "paper"]
+CURRENT_RESEARCH_MAX_AGE_DAYS = 30
 
 
 def _utc_now() -> str:
@@ -280,6 +284,8 @@ class ImagineerSystem:
             state_path = configured or Path.cwd() / ".runtime" / "imagineer_state.json"
         self.state_path = Path(state_path)
         self._state_lock = threading.RLock()
+        self._source_cache_lock = threading.RLock()
+        self._source_intake_cache: tuple[datetime, dict[str, Any]] | None = None
 
     def ops_check(self) -> dict[str, Any]:
         state = self._load_state()
@@ -294,8 +300,11 @@ class ImagineerSystem:
         ai_reviews = state.get("reviews", [])
         fit_score = round(sum(item["score"] for item in dimensions) / max(len(dimensions), 1))
         generated_at = _utc_now()
-        a3_snapshot = self._a3_queue_snapshot()
-        source_intake = self._source_intake_state(state)
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            a3_future = executor.submit(self._a3_queue_snapshot)
+            source_intake_future = executor.submit(self._source_intake_state, state)
+            a3_snapshot = a3_future.result()
+            source_intake = source_intake_future.result()
         active_research = source_intake.get("active_research") if isinstance(source_intake.get("active_research"), dict) else {}
         step_decision = self._step_decision(state, dimensions, weakest, active_research)
         next_action = self._next_action(state, weakest, active_research=active_research)
@@ -1753,14 +1762,128 @@ class ImagineerSystem:
         return {"ok": False, "available": False, "source": A3_QUEUE_SNAPSHOT_URL, "error": "invalid_payload"}
 
     def _progress_work_events(self) -> dict[str, Any]:
-        return self._fetch_json_source(PROGRESS_WORK_EVENTS_URL, read_limit=500_000, timeout=6)
+        return self._fetch_json_source(PROGRESS_WORK_EVENTS_URL, read_limit=500_000, timeout=15)
 
-    def _active_research_from_progress(self, progress_state: dict[str, Any]) -> dict[str, Any]:
-        if not progress_state.get("ok"):
+    def _progress_summary(self) -> dict[str, Any]:
+        return self._fetch_json_source(PROGRESS_SUMMARY_URL, read_limit=2_000_000, timeout=15)
+
+    def _brain_files(self) -> dict[str, Any]:
+        return self._fetch_json_source(BRAIN_FILES_URL, read_limit=1_000_000, timeout=10)
+
+    def _active_research_from_sources(
+        self,
+        *,
+        brain_state: dict[str, Any],
+        progress_state: dict[str, Any],
+        progress_summary_state: dict[str, Any],
+    ) -> dict[str, Any]:
+        candidates = [
+            *self._research_candidates_from_brain(brain_state),
+            *self._research_candidates_from_progress_events(progress_state),
+            *self._research_candidates_from_progress_summary(progress_summary_state),
+        ]
+        cutoff = datetime.now(timezone.utc) - timedelta(days=CURRENT_RESEARCH_MAX_AGE_DAYS)
+        current_candidates = [
+            candidate
+            for candidate in candidates
+            if (self._parse_timestamp(candidate.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc)) >= cutoff
+        ]
+        if not current_candidates:
             return {}
+
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for candidate in current_candidates:
+            grouped.setdefault(str(candidate.get("research_lane") or "research"), []).append(candidate)
+
+        merged: list[dict[str, Any]] = []
+        for lane_candidates in grouped.values():
+            action_basis = max(
+                lane_candidates,
+                key=lambda item: (
+                    int(item.get("specificity") or 0),
+                    self._parse_timestamp(item.get("created_at")) or datetime.min.replace(tzinfo=timezone.utc),
+                ),
+            )
+            freshest = max(
+                lane_candidates,
+                key=lambda item: self._parse_timestamp(item.get("created_at"))
+                or datetime.min.replace(tzinfo=timezone.utc),
+            )
+            result = copy.deepcopy(action_basis)
+            result["event_created_at"] = freshest.get("created_at")
+            result["freshness_basis"] = freshest.get("source_label")
+            source_labels: dict[str, str] = {}
+            for item in sorted(
+                lane_candidates,
+                key=lambda item: self._parse_timestamp(item.get("created_at"))
+                or datetime.min.replace(tzinfo=timezone.utc),
+                reverse=True,
+            ):
+                source_kind = str(item.get("source_kind") or "source")
+                if source_kind not in source_labels and item.get("source_label"):
+                    source_labels[source_kind] = str(item["source_label"])
+            result["source"] = " + ".join(source_labels.values())
+            result["source_ids"] = list(
+                dict.fromkeys(
+                    source_id
+                    for item in lane_candidates
+                    for source_id in item.get("source_ids", [])
+                    if isinstance(source_id, str)
+                )
+            )
+            result["corroboration_count"] = len(
+                {str(item.get("source_kind") or "") for item in lane_candidates if item.get("source_kind")}
+            )
+            merged.append(result)
+
+        selected = max(
+            merged,
+            key=lambda item: (
+                self._parse_timestamp(item.get("event_created_at"))
+                or datetime.min.replace(tzinfo=timezone.utc),
+                int(item.get("specificity") or 0),
+            ),
+        )
+        selected["status"] = "active"
+        return selected
+
+    def _research_candidates_from_brain(self, brain_state: dict[str, Any]) -> list[dict[str, Any]]:
+        if not brain_state.get("ok"):
+            return []
+        files = brain_state.get("json", {}).get("files")
+        if not isinstance(files, list):
+            return []
+        candidates = []
+        for item in files[:80]:
+            if not isinstance(item, dict):
+                continue
+            text = " ".join(
+                str(item.get(key) or "")
+                for key in ("name", "kind", "sourceText")
+            )
+            lane = self._research_lane(text)
+            created_at = item.get("sourceCreatedAt") or item.get("createdAt")
+            if not lane or not self._parse_timestamp(created_at):
+                continue
+            candidates.append(
+                self._research_candidate(
+                    research_lane=lane,
+                    text=text,
+                    created_at=str(created_at),
+                    source_kind="brain",
+                    source_label=f"Brain current research note {created_at}",
+                    specificity=3,
+                )
+            )
+        return candidates
+
+    def _research_candidates_from_progress_events(self, progress_state: dict[str, Any]) -> list[dict[str, Any]]:
+        if not progress_state.get("ok"):
+            return []
         events = progress_state.get("json", {}).get("events")
         if not isinstance(events, list):
-            return {}
+            return []
+        candidates = []
         for event in events:
             if not isinstance(event, dict):
                 continue
@@ -1769,77 +1892,240 @@ class ImagineerSystem:
                 source_ids = [source_ids]
             if not isinstance(source_ids, list):
                 source_ids = []
-            search_values = [
-                event.get("title"),
-                event.get("complaint"),
-                event.get("issue"),
-                event.get("body"),
-                event.get("codex_change"),
-                event.get("codexChange"),
-                event.get("changed"),
-                event.get("provenance"),
-                " ".join(str(source_id) for source_id in source_ids),
-            ]
-            search_text = " ".join(str(value or "") for value in search_values).lower()
-            if "wavevis" not in search_text:
-                continue
-            if "handoff" in search_text or "new-chat" in search_text:
-                continue
-            active_wavevis_gate = any(
-                token in search_text
-                for token in (
-                    "physical connector occupancy",
-                    "two-cell connector",
-                    "one center",
-                    "one-center",
-                    "four straight legs",
-                    "four legs",
-                    "x-cell connector",
-                    "over-occupied physical connector",
-                    "four cells meet",
-                    "reference-shape",
-                    "reference shape",
-                    "tube reference",
-                    "june 24",
+            text = " ".join(
+                str(value or "")
+                for value in (
+                    event.get("title"),
+                    event.get("complaint"),
+                    event.get("issue"),
+                    event.get("body"),
+                    event.get("codex_change"),
+                    event.get("codexChange"),
+                    event.get("changed"),
+                    event.get("provenance"),
+                    " ".join(str(source_id) for source_id in source_ids),
                 )
             )
-            title_text = str(event.get("title") or "").lower()
-            wavevis_event = "wavevis" in title_text or any(
-                isinstance(source_id, str) and "wavevis" in source_id.lower() for source_id in source_ids
+            lowered = text.lower()
+            if "handoff" in lowered or "new-chat" in lowered:
+                continue
+            lane = self._research_lane(text)
+            created_at = event.get("created_at") or event.get("createdAt")
+            if not lane or not self._parse_timestamp(created_at):
+                continue
+            candidate = self._research_candidate(
+                research_lane=lane,
+                text=text,
+                created_at=str(created_at),
+                source_kind="progress_event",
+                source_label=f"Progress research event {event.get('title') or created_at}",
+                specificity=2,
             )
-            if not (wavevis_event or active_wavevis_gate):
+            candidate["event_title"] = event.get("title")
+            candidate["source_ids"] = [source_id for source_id in source_ids if isinstance(source_id, str)]
+            candidates.append(candidate)
+        return candidates
+
+    def _research_candidates_from_progress_summary(
+        self,
+        progress_summary_state: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        if not progress_summary_state.get("ok"):
+            return []
+        latest = progress_summary_state.get("json", {}).get("latest")
+        sources = latest.get("sources") if isinstance(latest, dict) else None
+        if not isinstance(sources, list):
+            return []
+        candidates = []
+        for source in sources:
+            if not isinstance(source, dict):
                 continue
-            if not active_wavevis_gate and not any(
-                token in search_text
-                for token in ("x-cell", "x cell", "mechanism", "collinear", "opposite pair", "reference")
+            source_json = source.get("json") if isinstance(source.get("json"), dict) else {}
+            created_at = next(
+                (
+                    source_json.get(key)
+                    for key in ("updatedAt", "updated_at", "sourceCreatedAt", "createdAt", "checkedAt")
+                    if source_json.get(key)
+                ),
+                None,
+            )
+            if not self._parse_timestamp(created_at):
+                continue
+            text = " ".join(
+                str(source.get(key) or "")
+                for key in ("id", "name", "purpose", "title")
+            )
+            lane = self._research_lane(text)
+            if not lane:
+                continue
+            source_id = str(source.get("id") or "")
+            candidate = self._research_candidate(
+                research_lane=lane,
+                text=text,
+                created_at=str(created_at),
+                source_kind="progress_source",
+                source_label=f"Progress source {source_id or source.get('name')} {created_at}",
+                specificity=1,
+            )
+            candidate["source_ids"] = [source_id] if source_id else []
+            candidates.append(candidate)
+        return candidates
+
+    def _research_lane(self, value: str) -> str:
+        text = str(value or "").lower()
+        if (
+            "cellular soft robots" in text
+            or "science robotics" in text
+            or re.search(r"\bbf0[1-5]\b", text)
+            or "table s1" in text
+            or "pneunet" in text
+            or ("pressure test" in text and any(token in text for token in ("cell", "width", "module")))
+        ):
+            return "cellular_soft_robots"
+        if "wavevis" in text and any(
+            token in text
+            for token in (
+                "x-cell",
+                "x cell",
+                "mechanism",
+                "connector",
+                "reference",
+                "overhang",
+                "magnetic valve",
+                "flux line",
+            )
+        ):
+            return "wavevis"
+        if any(token in text for token in ("fluxcell", "electropermanent magnet", "epm valve")):
+            return "fluxcell"
+        if "sarrus" in text and any(token in text for token in ("mechanism", "paper", "figure", "cell", "robot")):
+            return "sarrus"
+        return ""
+
+    def _research_candidate(
+        self,
+        *,
+        research_lane: str,
+        text: str,
+        created_at: str,
+        source_kind: str,
+        source_label: str,
+        specificity: int,
+    ) -> dict[str, Any]:
+        action = self._current_research_action(research_lane, text)
+        return {
+            **action,
+            "research_lane": research_lane,
+            "created_at": created_at,
+            "source_kind": source_kind,
+            "source_label": source_label,
+            "specificity": specificity,
+            "source_ids": [],
+        }
+
+    def _current_research_action(self, research_lane: str, text: str) -> dict[str, Any]:
+        lowered = str(text or "").lower()
+        if research_lane == "cellular_soft_robots":
+            if "pressure test" in lowered or (
+                "zero psi" in lowered and any(token in lowered for token in ("width", "cell", "sample"))
             ):
-                continue
-            title = str(event.get("title") or "WaveVis active research")
+                return {
+                    "title": "Cellular Soft Robots experimental protocol",
+                    "current_step": "Lock the Cellular Soft Robots pressure-test protocol.",
+                    "body": (
+                        "Define and document one zero-psi conditioning rule, then run the next pressure-width trials "
+                        "under that same protocol before using the data in the paper."
+                    ),
+                    "why": (
+                        "Brain's newest career-relevant note is about reproducible pressure-width data, and Progress "
+                        "shows the Cellular Soft Robots manuscript is the active research record."
+                    ),
+                    "time": "Current research session",
+                    "href": "https://paper.aolabs.io/",
+                    "link_label": "Open paper",
+                }
+            if any(token in lowered for token in ("figure", "panel", "caption", "bf01", "bf04", "bf05")):
+                return {
+                    "title": "Cellular Soft Robots figure gate",
+                    "current_step": "Finish the Cellular Soft Robots figure-format pass.",
+                    "body": (
+                        "Apply the current Science Robotics panel-label and caption grammar to the active figures "
+                        "without replacing accepted source artwork or user-written prose."
+                    ),
+                    "why": "Brain and Progress identify the Cellular Soft Robots paper and its current figure work as the active research lane.",
+                    "time": "Current research session",
+                    "href": "https://paper.aolabs.io/",
+                    "link_label": "Open paper",
+                }
             return {
-                "status": "active",
+                "title": "Cellular Soft Robots paper gate",
+                "current_step": "Advance the current Cellular Soft Robots paper gate.",
+                "body": (
+                    "Use the newest Brain research note and current saved manuscript state to finish the active "
+                    "experiment, figure, or paper gate before switching projects."
+                ),
+                "why": "The current Brain and Progress research state points to Cellular Soft Robots, not an older project.",
+                "time": "Current research session",
+                "href": "https://paper.aolabs.io/",
+                "link_label": "Open paper",
+            }
+        if research_lane == "wavevis":
+            return {
                 "title": "WaveVis reference-shape gate",
                 "current_step": "Close WaveVis reference-shape match.",
                 "body": WAVEVIS_CURRENT_GATE_BODY,
-                "why": (
-                    "WaveVis is the active research lane. The connector proof is verified; the remaining gate is "
-                    "reference-shape identity."
-                ),
-                "time": "Current work session",
+                "why": "The newest career-relevant Brain or Progress state identifies WaveVis as the active research lane.",
+                "time": "Current research session",
                 "href": "https://aolabs.io/wavevis/",
                 "link_label": "Open WaveVis",
-                "source": f"Progress active research event: {title}.",
-                "event_title": title,
-                "event_created_at": event.get("created_at"),
-                "source_ids": [source_id for source_id in source_ids if isinstance(source_id, str)],
             }
-        return {}
+        if research_lane == "fluxcell":
+            return {
+                "title": "FluxCell research gate",
+                "current_step": "Advance the current FluxCell mechanism gate.",
+                "body": "Use the newest source-backed mechanism, actuation, or paper gate as the next inspectable R&D result.",
+                "why": "The newest career-relevant Brain or Progress state identifies FluxCell as the active research lane.",
+                "time": "Current research session",
+                "href": "https://fluxcell.aolabs.io/",
+                "link_label": "Open FluxCell",
+            }
+        return {
+            "title": "Sarrus research gate",
+            "current_step": "Advance the current Sarrus research gate.",
+            "body": "Finish the newest source-backed mechanism, figure, experiment, or paper gate before reopening older work.",
+            "why": "The newest career-relevant Brain or Progress state identifies Sarrus as the active research lane.",
+            "time": "Current research session",
+            "href": "https://sarrus.aolabs.io/",
+            "link_label": "Open Sarrus",
+        }
 
     def _source_intake_state(self, state: dict[str, Any]) -> dict[str, Any]:
-        app_state = self._fetch_json_source(PHD_APP_STATE_URL, read_limit=2_000_000)
-        files_state = self._fetch_json_source(PHD_FILES_URL, read_limit=2_000_000)
-        research_state = self._fetch_json_source(PHD_RESEARCH_NOTES_URL, read_limit=2_000_000)
-        progress_state = self._progress_work_events()
-        active_research = self._active_research_from_progress(progress_state)
+        now = datetime.now(timezone.utc)
+        with self._source_cache_lock:
+            if self._source_intake_cache and now - self._source_intake_cache[0] < timedelta(seconds=60):
+                return copy.deepcopy(self._source_intake_cache[1])
+
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            futures = {
+                "app": executor.submit(self._fetch_json_source, PHD_APP_STATE_URL, read_limit=2_000_000),
+                "files": executor.submit(self._fetch_json_source, PHD_FILES_URL, read_limit=2_000_000),
+                "research": executor.submit(self._fetch_json_source, PHD_RESEARCH_NOTES_URL, read_limit=2_000_000),
+                "progress": executor.submit(self._progress_work_events),
+                "progress_summary": executor.submit(self._progress_summary),
+                "brain": executor.submit(self._brain_files),
+            }
+            app_state = futures["app"].result()
+            files_state = futures["files"].result()
+            research_state = futures["research"].result()
+            progress_state = futures["progress"].result()
+            progress_summary_state = futures["progress_summary"].result()
+            brain_state = futures["brain"].result()
+
+        active_research = self._active_research_from_sources(
+            brain_state=brain_state,
+            progress_state=progress_state,
+            progress_summary_state=progress_summary_state,
+        )
 
         notes = []
         if app_state.get("ok"):
@@ -1855,12 +2141,37 @@ class ImagineerSystem:
         if research_state.get("ok") and isinstance(research_state.get("json", {}).get("records"), list):
             research_records = [item for item in research_state["json"]["records"] if isinstance(item, dict)]
 
+        brain_files = []
+        if brain_state.get("ok") and isinstance(brain_state.get("json", {}).get("files"), list):
+            brain_files = [item for item in brain_state["json"]["files"] if isinstance(item, dict)]
+        progress_latest = (
+            progress_summary_state.get("json", {}).get("latest")
+            if progress_summary_state.get("ok")
+            and isinstance(progress_summary_state.get("json", {}).get("latest"), dict)
+            else {}
+        )
+
         latest_note_at = self._latest_record_time(notes, ("updatedAt", "createdAt", "capturedAt"))
         latest_file_at = self._latest_record_time(files, ("sourceCreatedAt", "createdAt", "capturedAt"))
         latest_research_at = self._latest_record_time(research_records, ("sourceCreatedAt", "updatedAt", "createdAt"))
+        latest_brain_at = self._latest_record_time(brain_files, ("sourceCreatedAt", "createdAt"))
         topics = self._phd_topic_flags(notes, research_records)
         meeting_count = sum(1 for record in research_records if "meeting" in str(record.get("kind") or ""))
-        status = "current" if app_state.get("ok") or files_state.get("ok") or research_state.get("ok") else "unavailable"
+        status = (
+            "current"
+            if any(
+                source.get("ok")
+                for source in (
+                    brain_state,
+                    app_state,
+                    files_state,
+                    research_state,
+                    progress_state,
+                    progress_summary_state,
+                )
+            )
+            else "unavailable"
+        )
         note_detail = (
             "PhD notes are current."
             if app_state.get("ok")
@@ -1871,12 +2182,38 @@ class ImagineerSystem:
         if topics:
             note_detail = f"Active source flags: {', '.join(topics)}."
 
-        return {
+        result = {
             "title": "Source state",
             "status": status,
-            "current_step": active_research.get("current_step") or "Capture notes and files in PhD.",
+            "current_step": active_research.get("current_step") or "Refresh the newest research step from Brain and Progress.",
             "active_research": active_research,
             "sync_targets": SOURCE_SYNC_TARGETS,
+            "current_research_source": {
+                "lane": active_research.get("research_lane"),
+                "selected_at": active_research.get("event_created_at"),
+                "basis": active_research.get("source"),
+                "corroboration_count": active_research.get("corroboration_count", 0),
+            },
+            "brain": {
+                "url": BRAIN_FILES_URL,
+                "status": "current" if brain_state.get("ok") else "unavailable",
+                "file_count": len(brain_files) if brain_state.get("ok") else None,
+                "latest_at": latest_brain_at,
+                "detail": (
+                    "Brain current-work notes are included in research-step selection."
+                    if brain_state.get("ok")
+                    else f"Brain unavailable: {brain_state.get('error', 'unknown')}."
+                ),
+            },
+            "progress": {
+                "work_events_url": PROGRESS_WORK_EVENTS_URL,
+                "summary_url": PROGRESS_SUMMARY_URL,
+                "status": "current" if progress_state.get("ok") or progress_summary_state.get("ok") else "unavailable",
+                "snapshot_id": progress_latest.get("id"),
+                "created_at": progress_latest.get("createdAt"),
+                "source_count": progress_latest.get("sourceCount"),
+                "healthy_count": progress_latest.get("healthyCount"),
+            },
             "primary_source": {
                 "name": "phd",
                 "url": PHD_HOME_URL,
@@ -1897,15 +2234,20 @@ class ImagineerSystem:
                 "detail": "PhD files are current." if files_state.get("ok") else f"PhD files unavailable: {files_state.get('error', 'unknown')}.",
             },
             "sources": [
+                {"name": "Brain current work", "url": BRAIN_FILES_URL, "status": "current" if brain_state.get("ok") else "unavailable"},
                 {"name": "phd app state", "url": PHD_APP_STATE_URL, "status": "current" if app_state.get("ok") else "unavailable"},
                 {"name": "phd files", "url": PHD_FILES_URL, "status": "current" if files_state.get("ok") else "unavailable"},
                 {"name": "phd research notes", "url": PHD_RESEARCH_NOTES_URL, "status": "current" if research_state.get("ok") else "unavailable"},
-                {"name": "Progress", "url": PROGRESS_WORK_EVENTS_URL, "status": "current" if progress_state.get("ok") else "unavailable"},
+                {"name": "Progress work events", "url": PROGRESS_WORK_EVENTS_URL, "status": "current" if progress_state.get("ok") else "unavailable"},
+                {"name": "Progress summary", "url": PROGRESS_SUMMARY_URL, "status": "current" if progress_summary_state.get("ok") else "unavailable"},
                 {"name": "A3", "url": A3_QUEUE_SNAPSHOT_URL, "status": "checked"},
                 {"name": "CV", "url": "https://cv.aolabs.io/alan-nguyen-pham-cv.pdf", "status": "source"},
             ],
-            "privacy": "Public Imagineer shows source counts, freshness, and topic flags, not raw PhD note text.",
+            "privacy": "Public Imagineer uses Brain and PhD notes to choose the work lane but does not expose their raw text.",
         }
+        with self._source_cache_lock:
+            self._source_intake_cache = (now, copy.deepcopy(result))
+        return result
 
     def _fetch_json_source(self, url: str, *, read_limit: int = 250_000, timeout: int = 6) -> dict[str, Any]:
         try:
@@ -2169,7 +2511,8 @@ class ImagineerSystem:
         return {
             "title": "Career source, income path, car",
             "summary": (
-                "WaveVis reference-shape gate now; public career signal follows verified research progress; A3 path downstream."
+                f"{str(step.get('title') or 'Current research gate').rstrip('.')} now; "
+                "public career signal follows verified research progress; A3 path downstream."
             ),
             "source": "Imagineer ops + PhD app state + Progress source graph + A3 queue snapshot.",
             "updated_at": a3_snapshot.get("generatedAt") or a3_snapshot.get("checkedAt") or _utc_now(),
@@ -2282,22 +2625,22 @@ class ImagineerSystem:
         active_research = active_research if isinstance(active_research, dict) else {}
         candidates = [
             {
-                "id": "close-wavevis-reference-shape-match",
+                "id": "refresh-current-research-gate",
                 "lane": "leadership_network",
-                "title": "Close WaveVis reference-shape match.",
-                "body": WAVEVIS_CURRENT_GATE_BODY,
-                "why": "This is the current WaveVis gate after the connector proof.",
-                "time": "Current work session",
-                "href": "https://aolabs.io/wavevis/",
-                "link_label": "Open WaveVis",
+                "title": "Refresh the current research gate.",
+                "body": "Use the newest career-relevant Brain note and Progress paper state; do not reopen an older project from memory.",
+                "why": "A project is current only when Brain or Progress supplies a recent research signal.",
+                "time": "2 minutes",
+                "href": "https://aolabs.io/brain/",
+                "link_label": "Open Brain",
                 "source_doc": phd_doc,
-                "urgency": "active research now",
-                "role_alignment": 24,
-                "bottleneck_relief": 24,
-                "evidence_created": 22,
-                "compounding": 16,
-                "urgency_score": 13,
-                "friction": 6,
+                "urgency": "source refresh needed",
+                "role_alignment": 18,
+                "bottleneck_relief": 18,
+                "evidence_created": 10,
+                "compounding": 12,
+                "urgency_score": 8,
+                "friction": 4,
                 "gate_penalty": 0,
             },
             {
@@ -2377,10 +2720,10 @@ class ImagineerSystem:
                     "lane": "leadership_network",
                     "title": active_research.get("current_step"),
                     "body": active_research.get("body"),
-                    "why": active_research.get("why") or "This is the active research lane from Progress.",
+                    "why": active_research.get("why") or "This is the active research lane from Brain and Progress.",
                     "time": active_research.get("time") or "Current work session",
-                    "href": active_research.get("href") or "https://aolabs.io/wavevis/",
-                    "link_label": active_research.get("link_label") or "Open WaveVis",
+                    "href": active_research.get("href") or "https://aolabs.io/brain/",
+                    "link_label": active_research.get("link_label") or "Open source",
                     "source_doc": active_research.get("source"),
                     "urgency": "active research now",
                     "role_alignment": 28,
@@ -2431,9 +2774,9 @@ class ImagineerSystem:
                 "lane": key,
                 "title": active_research.get("current_step"),
                 "body": active_research.get("body"),
-                "why": active_research.get("why") or "This is the active research lane from Progress.",
-                "href": active_research.get("href") or "https://aolabs.io/wavevis/",
-                "linkLabel": active_research.get("link_label") or "Open WaveVis",
+                "why": active_research.get("why") or "This is the active research lane from Brain and Progress.",
+                "href": active_research.get("href") or "https://aolabs.io/brain/",
+                "linkLabel": active_research.get("link_label") or "Open source",
             }
         actions = {
             "mechanical_depth": {
@@ -2456,9 +2799,9 @@ class ImagineerSystem:
             },
             "leadership_network": {
                 "lane": key,
-                "title": "Close WaveVis reference-shape match.",
-                "body": WAVEVIS_CURRENT_GATE_BODY,
-                "why": "The principal gap is current ownership. The current decision is the reference-shape gate inside WaveVis, not a distant endpoint.",
+                "title": "Refresh the current research gate.",
+                "body": "Read the newest career-relevant Brain note and Progress paper state before selecting another project step.",
+                "why": "The principal gap is current ownership, and a cached project name cannot establish what the current work is.",
             },
             "application_packet": {
                 "lane": key,

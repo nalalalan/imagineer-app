@@ -4,14 +4,14 @@ const apiBase = window.IMAGINEER_API_BASE || (sameOriginApiHosts.has(window.loca
 const progressApiBase = window.PROGRESS_API_BASE || "https://progress.aolabs.io";
 
 const fallbackStep = {
-  title: "Close WaveVis reference-shape match.",
-  body: "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference.",
-  why: "WaveVis is the active research lane now; the connector proof is verified, and the remaining gate is reference-shape identity.",
-  time: "Current work session",
-  href: "https://aolabs.io/wavevis/",
-  linkLabel: "Open WaveVis",
-  source: "Fallback step. Progress state did not load.",
-  updatedAt: new Date().toISOString(),
+  title: "Reading the current research step.",
+  body: "Imagineer is checking the newest career-relevant Brain note and Progress state.",
+  why: "A cached project is never presented as current.",
+  time: "Loading",
+  href: "https://progress.aolabs.io/",
+  linkLabel: "Open Progress",
+  source: "Live Brain and Progress read pending.",
+  updatedAt: null,
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -48,10 +48,10 @@ async function request(url, options = {}) {
 async function loadState() {
   render(fallbackStep, null, null);
 
-  const ops = await request(`${apiBase}/api/imagineer/ops-check`).catch(() => null);
+  const ops = await request(`${apiBase}/api/imagineer/ops-check`, { timeout: 30000 }).catch(() => null);
   render(bestStep(ops, null), ops, null);
 
-  const progress = await request(`${progressApiBase}/api/progress/summary`, { timeout: 12000 }).catch(() => null);
+  const progress = await request(`${progressApiBase}/api/progress/summary`, { timeout: 30000 }).catch(() => null);
   render(bestStep(ops, progress), ops, progress);
 }
 
@@ -105,7 +105,7 @@ function fallbackLifeLoop(step, ops) {
   const fit = ops.fit_score ? `fit ${ops.fit_score}/100` : "fit reading unavailable";
   return {
     title: "Career source, income path, car",
-    summary: "WaveVis reference-shape gate now; public career signal follows verified research progress; A3 path downstream.",
+    summary: `${String(step.title || "Current research gate").replace(/\.$/, "")} now; public career signal follows verified research progress; A3 path downstream.`,
     items: [
       {
         label: "Career",
@@ -202,6 +202,7 @@ function clean(value) {
 }
 
 function formatDateTime(value) {
+  if (!value) return "--";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "--";
   return parsed.toLocaleString(undefined, {
