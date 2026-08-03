@@ -100,9 +100,9 @@
           <h2>Principal R&amp;D Imagineer - Mechanical Engineer</h2>
         </div>
         <div class="packet-grid">
-          <p id="lead-summary">Verified live Disney lead: Principal Ride Development Engineer, Walt Disney Imagineering, Glendale. The destination page returns HTTP 200 and lists a Jun 25, 2026 posting date. This is a lead only, not an application, referral, relationship, or hiring claim.</p>
+          <p id="lead-summary">No current Disney lead is verified. Use the exact search target: site:disneycareers.com Walt Disney Imagineering mechanical R&amp;D Glendale.</p>
           <ul>
-            <li id="lead-active">Active lead: Disney job ID 10134485, posted Jun 25, 2026.</li>
+            <li id="lead-active">Search target: Disney Careers mechanical R&amp;D, Glendale.</li>
             <li>Mechanical SME review for ride-engineering design intent, safety, reliability, efficiency, standards, and compliance.</li>
             <li>Advanced statics, dynamics, kinematics, stress, fatigue, machine design, FEA/CAD, design sensibility, and prototype/development work.</li>
             <li>Expired reference: Disney job ID 10146734 now returns Job Not Found; keep it only as a role-shape reference.</li>
@@ -118,7 +118,7 @@
         <div class="packet-grid">
           <p>Supported shape: Glendale mechanical Imagineering search lane. North-star profile: Principal R&amp;D Imagineer. Principal-scope work remains unverified.</p>
           <ul>
-            <li>Verified current state: one active Disney lead passes clicked-destination verification; R&amp;D principal scope remains unverified.</li>
+            <li>Verified current state: no active Disney lead passes clicked-destination verification; R&amp;D principal scope remains unverified.</li>
             <li>Strongest current work: Sarrus gives mechanism geometry, pneumatic actuation, modular assembly, measured behavior, build state, and human-facing physical motion.</li>
             <li>Current ownership gap: the active next signal comes from the newest career-relevant Brain and Progress state, not a cached project.</li>
             <li>Principal scope not verified: led design reviews, technical direction owned, integrated systems, collaborators coordinated, budget or schedule ownership, or comparable principal-scope outcomes.</li>
@@ -202,7 +202,6 @@
         </div>
         <ul>
           <li><a href="https://sarrus.aolabs.io/">Sarrus: geometry, actuation, force/stiffness, build, iteration, and motion</a></li>
-          <li><a href="https://www.disneycareers.com/en/job/glendale/principal-ride-development-engineer/391/87268384416">Disney Careers verified lead: Principal Ride Development Engineer</a></li>
           <li><a href="https://www.disneycareers.com/en/search-jobs?k=Imagineering%20mechanical&amp;l=Glendale%2C%20CA%2C%20United%20States">Disney Careers search lane: Imagineering mechanical, Glendale</a></li>
           <li><a href="https://progress.aolabs.io/">Progress: AO Labs source graph and scan ledger</a></li>
           <li><a href="https://la.disneyresearch.com/researchers/">Disney Research Imagineering public roster</a></li>
@@ -289,9 +288,15 @@
         const leadLocation = lead?.location || ops?.target?.location || "Glendale, California";
         const leadChecked = formatEastern(lead?.last_checked_at || ops?.target?.active_listing_last_checked_at);
         const leadPosted = ops?.target?.active_listing_posted || lead?.latest_check?.posted_date || "2026-06-25";
-        const leadStatus = lead?.last_status_code || ops?.target?.active_listing_last_status_code || 200;
-        setText("lead-summary", `Verified live Disney lead: ${leadTitle}, ${leadCompany}, ${leadLocation}. The destination page returned HTTP ${leadStatus}${leadChecked ? ` on ${leadChecked}` : ""} and lists a ${leadPosted} posting date. This is a lead only, not an application, referral, relationship, or hiring claim.`);
-        setText("lead-active", `Active lead: Disney job ID ${ops?.target?.active_listing_job_id || "10134485"}, posted ${leadPosted}.`);
+        const leadStatus = lead?.last_status_code || ops?.target?.active_listing_last_status_code;
+        const searchTarget = lead?.search_target || ops?.target?.active_listing_search_target || "site:disneycareers.com Walt Disney Imagineering mechanical R&D Glendale";
+        if (lead?.status === "current" && lead?.listing_state === "verified_live_listing") {
+          setText("lead-summary", `Verified live Disney lead: ${leadTitle}, ${leadCompany}, ${leadLocation}. The destination page returned HTTP ${leadStatus || 200}${leadChecked ? ` on ${leadChecked}` : ""} and lists a ${leadPosted} posting date. This is a lead only, not an application, referral, relationship, or hiring claim.`);
+          setText("lead-active", `Active lead: Disney job ID ${ops?.target?.active_listing_job_id || "10134485"}, posted ${leadPosted}.`);
+        } else {
+          setText("lead-summary", `No current Disney lead is verified${leadStatus ? `; the last tracked destination returned HTTP ${leadStatus}` : ""}${leadChecked ? ` on ${leadChecked}` : ""}. Use the exact search target: ${searchTarget}.`);
+          setText("lead-active", `Search target: ${searchTarget}.`);
+        }
         setText("source-summary", sourceCount ? `${sourceCount} sources tracked; ${progressHealthy ? `${progressHealthy} healthy` : "health count unavailable"} in the latest Progress scan.` : hasLiveState ? "Whole public AO Labs graph." : "Live source graph unavailable.");
         setText("source-detail", hasLiveState ? `Profile basis: ${ops?.profile?.basis || "AO Labs home, CV, public project surfaces, papers, dashboards, progress ledger, review state, and role-specific profile."}` : "Profile basis unavailable until live state responds.");
         setText("source-freshness", progress?.latest?.createdAt ? `Progress scan ${formatDateTime(progress.latest.createdAt).replace("Updated ", "")}; changed: ${compact(progress.latest.deltas?.changed) || "none"}.` : "Progress scan unavailable.");

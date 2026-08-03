@@ -40,6 +40,7 @@ WAVEVIS_CURRENT_GATE_BODY = (
     "Keep the verified one-center four-leg cells and two-cell connector nodes, then make the rendered sheet closer to the June 24 tube reference."
 )
 EXPIRED_DISNEY_JOB_IDS = {"10146734", "93733641696"}
+DISNEY_JOB_SEARCH_TARGET = "site:disneycareers.com Walt Disney Imagineering mechanical R&D Glendale"
 SOURCE_SYNC_TARGETS = ["Brain", "PhD", "Progress", "A3", "CV", "paper"]
 CURRENT_RESEARCH_MAX_AGE_DAYS = 30
 
@@ -62,11 +63,12 @@ DEFAULT_STATE: dict[str, Any] = {
         "active_listing_job_id": "10134485",
         "active_listing_posted": "2026-06-25",
         "active_listing_url": VERIFIED_DISNEY_JOB_URL,
-        "active_listing_state": "verified_live_listing",
-        "active_listing_last_checked_at": "2026-07-03T13:17:08.729197+00:00",
-        "active_listing_last_status_code": 200,
-        "active_listing_note": "Disney Careers destination verified live with matching title, company, and location. Lead only; no application, outreach, referral, relationship, or hiring claim.",
-        "north_star_note": "Use the WDI R&D principal title as the north-star profile; the active verified Disney lead is ride development, not proof of R&D hiring fit.",
+        "active_listing_state": "unavailable_on_last_check",
+        "active_listing_last_checked_at": "2026-08-03T13:25:00+00:00",
+        "active_listing_last_status_code": 404,
+        "active_listing_note": "Disney Careers destination no longer verifies as a current lead; use the exact search target instead of presenting a stale opening.",
+        "active_listing_search_target": DISNEY_JOB_SEARCH_TARGET,
+        "north_star_note": "Use the WDI R&D principal title as the north-star profile; no current Disney lead is verified.",
     },
     "positioning": POSITIONING_LINE,
     "profile_record": {
@@ -2371,6 +2373,7 @@ class ImagineerSystem:
             "last_status_code": target.get("active_listing_last_status_code"),
             "action": action,
             "latest_check": latest_check,
+            "search_target": target.get("active_listing_search_target") or DISNEY_JOB_SEARCH_TARGET,
         }
 
     def _check_active_listing_destination(self, state: dict[str, Any]) -> dict[str, Any]:
