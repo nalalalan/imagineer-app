@@ -132,6 +132,15 @@ class CurrentResearchSelectionTests(unittest.TestCase):
         self.assertIn("Brain's newest", selected["why"])
         self.assertNotIn("Progress", selected["why"])
 
+    def test_default_principal_ride_lead_is_current_after_clicked_verification(self) -> None:
+        state = self.system._merge_defaults({})
+        lead = self.system._lead_verification_state(state)
+
+        self.assertEqual(lead["status"], "current")
+        self.assertEqual(lead["listing_state"], "verified_live_listing")
+        self.assertEqual(lead["last_status_code"], 200)
+        self.assertEqual(state["target"]["active_listing_posted"], "2026-08-10")
+
 
 if __name__ == "__main__":
     unittest.main()
